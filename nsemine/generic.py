@@ -5,7 +5,6 @@ import json
 import pandas as pd
 
 
-
 def get_all_indices_names() -> Union[pd.DataFrame, None]:
     try:
         resp = scraper.get_request(url=urls.nifty_index_maping)

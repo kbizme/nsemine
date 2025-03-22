@@ -19,6 +19,7 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
     "Topic :: Software Development :: Libraries",
 ]
+
 dependencies = [
     "asyncio",
     "certifi",
@@ -33,6 +34,10 @@ dependencies = [
     "tzdata",
     "urllib3",
 ]
+
+
+[tool.setuptools]
+packages = ["nsemine"]
 
 [project.urls]
 "Homepage" = "https://github.com/kbizme/nsemine"

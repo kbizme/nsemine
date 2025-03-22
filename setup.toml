@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nsemine"
+version = "0.1.0"
+authors = [
+    { name = "kbizme", email = "kbhowmik.eduz@gmail.com" }
+]
+description = "Simplest and Cleanest Python Library to Scrape Data From The NSEIndia(NEW) and NiftyIndices Website."
+readme = "README.md"
+requires-python = ">=3.6"  
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "asyncio",
+    "certifi",
+    "charset-normalizer",
+    "idna",
+    "numpy",
+    "pandas",
+    "python-dateutil",
+    "pytz",
+    "requests",
+    "six",
+    "tzdata",
+    "urllib3",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/kbizme/nsemine"

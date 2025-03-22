@@ -37,7 +37,7 @@ dependencies = [
 
 
 [tool.setuptools]
-packages = ["nsemine"]
+packages = ["nsemine", "nsemine.bin", "nsemine.utilities"]
 
 [project.urls]
 "Homepage" = "https://github.com/kbizme/nsemine"

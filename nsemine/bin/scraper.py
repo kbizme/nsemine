@@ -1,6 +1,6 @@
 from typing import Any, Union
 import requests
-from utilities import  utils
+from nsemine.utilities import  utils
 
 
 

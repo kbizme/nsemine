@@ -1,5 +1,5 @@
 import requests
-from utilities import utils
+from nsemine.utilities import utils
 
 
 class NSEIndex:

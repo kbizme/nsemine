@@ -1,11 +1,19 @@
-from bin import scraper
-from utilities import urls
+from nsemine.bin import scraper
+from nsemine.utilities import urls
 from typing import Union
 import json
 import pandas as pd
 
 
+
 def get_all_indices_names() -> Union[pd.DataFrame, None]:
+    """
+    This functions fetches all the available indices at NSE Exchange.
+    Returns:
+        df (DataFrame) : Pandas DataFrame containing all the nse indices names.
+
+        Returns None, if any error occurred.
+    """
     try:
         resp = scraper.get_request(url=urls.nifty_index_maping)
         if resp:

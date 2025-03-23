@@ -1,9 +1,9 @@
 from nsemine.bin import scraper
-from nsemine.utilities import urls
+from nsemine.utilities import urls, utils
 from typing import Union
 import json
 import pandas as pd
-
+import traceback
 
 
 def get_all_indices_names() -> Union[pd.DataFrame, None]:
@@ -24,4 +24,6 @@ def get_all_indices_names() -> Union[pd.DataFrame, None]:
             df.columns = ['trading_index', 'full_name']
             return df
     except Exception as e:
-        print('Error Occurred in get_all_indices_names():', e)
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+

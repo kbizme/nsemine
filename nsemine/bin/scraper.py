@@ -1,18 +1,27 @@
 from typing import Any, Union
 import requests
-from nsemine.utilities import  utils
+from nsemine.utilities import  urls
+import traceback
 
 
 
-def get_request(url: str, params: Any = None):
+def get_request(url: str, headers: dict = None, params: Any = None, initial_url: str = None):
     try:
-        response = requests.get(url=url, headers=utils.api_headers, params=params)
+        if not headers:
+            headers = urls.nifty_headers
+        
+        session = requests.Session()
+        if initial_url:
+            session.get(url=initial_url, headers=urls.default_headers)
+
+        response = session.get(url=url, headers=headers, params=params)
         response.raise_for_status()
         if response.status_code == 200:
             return response
         return None
     
     except Exception as e:
-        print('Error while making the request to nse website:', e)()
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
 
 

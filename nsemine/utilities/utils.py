@@ -1,15 +1,51 @@
-api_headers = {
-            "accept": "text/html,application/xhtml+xml,text/csv,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "accept-language": "en-US,en;q=0.9,en-IN;q=0.8,en-GB;q=0.7",
-            "cache-control": "max-age=0",
-            "priority": "u=0, i",
-            "sec-ch-ua": '"Microsoft Edge";v="129", "Not=A?Brand";v="8", "Chromium";v="129"',
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": '"Windows"',
-            "sec-fetch-dest": "document",
-            "sec-fetch-mode": "navigate",
-            "sec-fetch-site": "none",
-            "sec-fetch-user": "?1",
-            "upgrade-insecure-requests": "1",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0"
-        }
+import gzip
+import io
+import zlib
+import brotli
+import zstandard
+
+def decompress_data(compressed_data: bytes) -> bytes:
+    """
+    Automatically detects and decompresses data compressed with gzip, deflate, brotli, or zstd.
+
+    Args:
+        compressed_data: The compressed bytes.
+
+    Returns:
+        The decompressed bytes, or the original bytes if decompression fails.
+    """
+    if not compressed_data:
+        return b""
+
+    # gzip check
+    if compressed_data.startswith(b'\x1f\x8b'):
+        try:
+            with gzip.GzipFile(fileobj=io.BytesIO(compressed_data), mode='rb') as f:
+                return f.read()
+        except OSError:
+            pass  # Try other methods
+
+    # deflate check
+    try:
+        return zlib.decompress(compressed_data)
+    except zlib.error:
+        try:
+            return zlib.decompress(compressed_data, wbits=-zlib.MAX_WBITS) #raw deflate
+        except zlib.error:
+            pass #try other methods
+
+    # brotli check
+    try:
+        return brotli.decompress(compressed_data)
+    except brotli.error:
+        pass  # Try other methods
+
+    # zstd check
+    try:
+        dctx = zstandard.ZstdDecompressor()
+        return dctx.decompress(compressed_data)
+    except zstandard.ZstdError:
+        pass  # Try other methods
+
+    # If all decompression attempts fail, return the original data.
+    return compressed_data

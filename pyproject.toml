@@ -13,26 +13,24 @@ maintainers = [
     { name = "kbizme", email = "kbhowmik.eduz@gmail.com" },
 ]
 
-description = "Simplest and Cleanest Python Library to Scrape Data From The NSEIndia(NEW) and NiftyIndices Website."
+description = "Simplest and Cleanest Python Library to Scrape Stocks, FnO and Indices Data From The NSEIndia(New) and NiftyIndices Websites."
 keywords = ["nse", "nsemine", "indian stock data", "stock market", "financial data", "scraping", "indices", 
 "stocks", "futures", "options", "trading", "investment", "nse exchange", "nifty data", "nse scrapers", "stock data", "nse python library"]
 readme = "README.md"
 requires-python = ">=3.6"  
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Office/Business :: Financial",
     "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
     "Topic :: Software Development :: Libraries",
     "Intended Audience :: Developers",
-    "Intended Audience :: Traders",
-    "Intended Audience :: Investors",
     "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
 ]
 
-license = { text = "MIT" }
+license = "MIT"
 
 dependencies = [
     "aiohttp",

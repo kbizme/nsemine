@@ -1,6 +1,3 @@
-## Simplest and Cleanest Python Library to Scrape Stocks & Indices Data From The NSEIndia(New) and NiftyIndices Website.
-
-## Introduction 
 `nsemine` is a Python library designed to provide a clean and straightforward interface for scraping data from the National Stock Exchange of India (NSE) and the Nifty Indices website. It aims to simplify the process of retrieving various market data, including indices, stock information, futures & options data, and general NSE-related utilities. This library is built to be efficient and user-friendly, catering to **developers**, **traders**, **investors** who need reliable NSE data for financial analysis, algorithmic trading, and data visualization.
 
 ## Installation

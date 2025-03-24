@@ -4,6 +4,7 @@ import zlib
 import brotli
 import zstandard
 
+
 def decompress_data(compressed_data: bytes) -> bytes:
     """
     Automatically detects and decompresses data compressed with gzip, deflate, brotli, or zstd.
@@ -23,7 +24,7 @@ def decompress_data(compressed_data: bytes) -> bytes:
             with gzip.GzipFile(fileobj=io.BytesIO(compressed_data), mode='rb') as f:
                 return f.read()
         except OSError:
-            pass  # Try other methods
+            pass  
 
     # deflate check
     try:
@@ -32,20 +33,19 @@ def decompress_data(compressed_data: bytes) -> bytes:
         try:
             return zlib.decompress(compressed_data, wbits=-zlib.MAX_WBITS) #raw deflate
         except zlib.error:
-            pass #try other methods
+            pass 
 
     # brotli check
     try:
         return brotli.decompress(compressed_data)
     except brotli.error:
-        pass  # Try other methods
-
+        pass  
     # zstd check
     try:
         dctx = zstandard.ZstdDecompressor()
         return dctx.decompress(compressed_data)
     except zstandard.ZstdError:
-        pass  # Try other methods
+        pass  
 
-    # If all decompression attempts fail, return the original data.
+    # If all decompression attempts fail, returning the original data.
     return compressed_data

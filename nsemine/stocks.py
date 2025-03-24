@@ -6,11 +6,13 @@ import pandas as pd
 import traceback
 
 
-def get_all_nse_securities_live(series: Union[str,list] = None, raw: bool = False) -> Union[pd.DataFrame, None]:
-    """Fetches the all the available securities in the NSE Exchange.
+def get_all_nse_securities_live_snapshot(series: Union[str,list] = None, raw: bool = False) -> Union[pd.DataFrame, None]:
+    """Fetches the live snapshot all the available securities in the NSE Exchange.
+    This snapshot includes the last price (close), previous_close price, change, change percentage, volume etc.
     Args:
         series (str, list): Filter the securities by series name.
                         Series name can be EQ, SM, ST, BE, GB, GS, etc...(refer to nse website for all available series names.)
+                        Refer to this link: https://www.nseindia.com/market-data/legend-of-series
         raw (bool): Pass True, if you need the raw data without processing.
     Returns:
         DataFrame : Returns Pandas DataFrame object if succeed.

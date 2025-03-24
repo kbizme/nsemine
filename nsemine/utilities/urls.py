@@ -3,9 +3,15 @@ from nsemine.bin import cookie
 
 
 ####### NSEIndia #######
+market_status = 'https://www.nseindia.com/api/marketStatus'
+holiday_list = 'https://www.nseindia.com/api/holiday-master?type=trading'
+
+
 nse_live_stock_analysis =  'https://www.nseindia.com/market-data/stocks-traded'
 nse_live_stock_analysis_api = 'https://www.nseindia.com/api/live-analysis-stocksTraded'
 
+# CSV
+nse_equity_list = 'https://archives.nseindia.com/content/equities/EQUITY_L.csv'
 
 
 ####### NiftyIndices #######

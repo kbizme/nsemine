@@ -4,11 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nsemine"
-version = "0.1.0"
+version = "0.3.0"
 authors = [
     { name = "kbizme", email = "kbhowmik.eduz@gmail.com" }
 ]
+
+maintainers = [
+    { name = "kbizme", email = "kbhowmik.eduz@gmail.com" },
+]
+
 description = "Simplest and Cleanest Python Library to Scrape Data From The NSEIndia(NEW) and NiftyIndices Website."
+keywords = ["nse", "nsemine", "indian stock data", "stock market", "financial data", "scraping", "indices", 
+"stocks", "futures", "options", "trading", "investment", "nse exchange", "nifty data", "nse scrapers", "stock data", "nse python library"]
 readme = "README.md"
 requires-python = ">=3.6"  
 classifiers = [
@@ -18,9 +25,17 @@ classifiers = [
     "Topic :: Office/Business :: Financial",
     "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
     "Topic :: Software Development :: Libraries",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Traders",
+    "Intended Audience :: Investors",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
 ]
 
+license = { text = "MIT" }
+
 dependencies = [
+    "aiohttp",
     "asyncio",
     "certifi",
     "charset-normalizer",
@@ -33,6 +48,9 @@ dependencies = [
     "six",
     "tzdata",
     "urllib3",
+    "brotli",
+    "zstandard",
+    "yarl",
 ]
 
 

@@ -3,3 +3,5 @@ play.py
 **/__pycache__
 dist
 nsemine.egg-info
+play.ipynb
+

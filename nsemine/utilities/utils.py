@@ -3,6 +3,8 @@ import io
 import zlib
 import brotli
 import zstandard
+import pandas as pd
+
 
 
 def decompress_data(compressed_data: bytes) -> bytes:
@@ -49,3 +51,38 @@ def decompress_data(compressed_data: bytes) -> bytes:
 
     # If all decompression attempts fail, returning the original data.
     return compressed_data
+
+
+
+def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's') -> pd.DataFrame:
+    """
+    This function expects that the given dataframe has a column 'datetime'.
+
+    Args:
+        df (DataFrame) : A Pandas DataFrame
+        unit (str): Unit of the timestamp.
+    Returns:
+        df (DataFrame) : The processed dataframe.
+    
+    Note:
+        If the datetime of the given dataframe is in timestamp, then you can provide the unit, Default is 'Second'.
+        And of any error occurs during the conversion, it returns the given data as it is.
+        
+    """
+    try:
+        if not isinstance(df, pd.DataFrame):
+            return df
+        # otherwise,
+        if not pd.api.types.is_datetime64_dtype(df['datetime']):
+            df['datetime'] = pd.to_datetime(df['datetime'], unit=unit)
+        
+        # filtering
+        df['time'] = df['datetime'].dt.time
+        market_start_time_obj = pd.to_datetime("09:14:00").time() 
+        market_end_time_obj = pd.to_datetime("15:31:00").time()
+        filtered_df = df[(df['time'] > market_start_time_obj) & (df['time'] < market_end_time_obj)]
+        
+        return filtered_df.drop('time', axis=1)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return df

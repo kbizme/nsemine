@@ -6,6 +6,7 @@ from nsemine.bin import cookie
 market_status = 'https://www.nseindia.com/api/marketStatus'
 holiday_list = 'https://www.nseindia.com/api/holiday-master?type=trading'
 
+nse_chart_data = 'https://charting.nseindia.com//Charts/ChartData/'
 
 nse_live_stock_analysis =  'https://www.nseindia.com/market-data/stocks-traded'
 nse_live_stock_analysis_api = 'https://www.nseindia.com/api/live-analysis-stocksTraded'

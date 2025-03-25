@@ -5,7 +5,7 @@ import traceback
 
 
 
-def get_request(url: str, headers: dict = None, params: Any = None, initial_url: str = None):
+def get_request(url: str, headers: dict = None, params: dict = None, initial_url: str = None):
     try:
         if not headers:
             headers = urls.nifty_headers

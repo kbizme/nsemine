@@ -11,6 +11,14 @@ nse_chart_data = 'https://charting.nseindia.com//Charts/ChartData/'
 nse_live_stock_analysis =  'https://www.nseindia.com/market-data/stocks-traded'
 nse_live_stock_analysis_api = 'https://www.nseindia.com/api/live-analysis-stocksTraded'
 
+
+nse_equity_quote_api = 'https://www.nseindia.com/api/quote-equity?symbol={}'
+nse_equity_quote = 'https://www.nseindia.com/get-quotes/equity?symbol={}'
+
+nse_equity_index_api = 'https://www.nseindia.com/api/equity-stockIndices'
+nse_equity_index = 'https://www.nseindia.com/market-data/live-equity-market'
+
+
 # CSV
 nse_equity_list = 'https://archives.nseindia.com/content/equities/EQUITY_L.csv'
 

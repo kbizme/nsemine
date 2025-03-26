@@ -5,120 +5,49 @@ import json
 import pandas as pd
 import traceback
 from io import StringIO
+from datetime import datetime
 
 
 
-def get_market_status(market_name: str = None) -> Union[list[dict], bool, None]:
+class NSEStock:
     """
-    Returns the current market status of the NSE Exchange.
-    Args:
-        market_name (str): You can pass the exact market name to get its status.
-                            For example -  CM for Capital Market, CUR for Currency,
-                            COM for Commodity, DB for Debt, CURF for Currency Future.
-    Returns:
-        market_status (list[dict], bool, None) : Returns the market status.
-
-        Note: if market_name is passed then it returns True if the market is open, and False if the market is closed.
-            If no market_name is given as argument, then it returns the raw data as list of dictionaries.
-            Returns None, if any error occurred.
+    This class provides methods to fetch various data related to a specific stock.
     """
-    try:
-        resp = scraper.get_request(url=urls.market_status)
-        if resp:
-            fetched_data = resp.json()['marketState']
-        if not market_name:
-            return fetched_data
-        
-        # otherwise,
-        mapper = { 'CM': 'Capital Market', 'CUR': 'Currency', 'COM': 'Commodity', 'DB': 'Debt', 'CURF': 'currencyfuture'}
-        market_name = mapper.get(market_name)
-        for market in fetched_data:
-            if market.get('market') == market_name:
-                return market.get('marketStatus') == 'Open'
-        
-        # if nothing matched, then returning the raw data
-        return fetched_data
-    except Exception as e:
-        print(f'ERROR! - {e}\n')
-        traceback.print_exc()
-    
+    def __init__(self, symbol: str):
+        self.symbol = symbol
+        self.quote_data = self.get_quotes()
+        if self.quote_data:
+            self.name = self.quote_data.get('name')
+            self.industry = self.quote_data.get('industry')
+            self.derivatives = self.quote_data.get('derivatives')
+            self.series = self.quote_data.get('series')
+            self.date_of_listing = self.quote_data.get('date_of_listing')
+            self.last_updated = self.quote_data.get('last_updated')
+            self.trading_status = self.quote_data.get('trading_status')
+            self.number_of_shares = self.quote_data.get('number_of_shares')
+            self.face_value = self.quote_data.get('face_value')
+        else:
+            print(f"The Symbol: {self.symbol} is not properly initialized.")
 
 
-def get_holiday_list() -> Union[pd.DataFrame, None]:
-    """
-    This function fetches the holidays at the NSE Exchange.
-
-    Returns:
-        df (DataFrame) : Pandas DataFrame containing all the holidays.
-
-        Returns None, if any error occurred.
-    """
-    try:
-        resp = scraper.get_request(url=urls.holiday_list)
-        if resp:
-            fetched_data = resp.json()
-        
-        df = pd.DataFrame(fetched_data.get('CM'))
-        if not df.empty:
-            df = df[['tradingDate', 'weekDay', 'description']]
-            df['tradingDate'] = pd.to_datetime(df['tradingDate'], errors='coerce')
-            df.columns = ['date', 'day', 'description']
-            return df
-        return None
-    except Exception as e:
-        print(f'ERROR! - {e}\n')
-        traceback.print_exc()
-
-
-
-def get_all_indices_list() -> Union[pd.DataFrame, None]:
-    """
-    This functions fetches all the available indices at the NSE Exchange.
-    Returns:
-        df (DataFrame) : Pandas DataFrame containing all the nse indices names.
-
-        Returns None, if any error occurred.
-    """
-    try:
-        resp = scraper.get_request(url=urls.nifty_index_maping)
-        if resp:
-            data = resp.text
-            if data.startswith('\ufeff'):
-                data = json.loads(data[1:])
-            df = pd.DataFrame(data)
-            df.columns = ['trading_index', 'full_name']
-            return df
-    except Exception as e:
-        print(f'ERROR! - {e}\n')
-        traceback.print_exc()
-
-
-
-def get_all_equities_list(raw: bool = False):
-    """
-    This functions fetches all the available equity list at the NSE Exchange.
-    Args:
-        raw (bool): Pass True, if you need the raw data without processing.
-    Returns:
-        df (DataFrame) : Pandas DataFrame containing all the nse equity list.
-
-        Returns None, if any error occurred.
-    """
-    try:
-        resp = scraper.get_request(url=urls.nse_equity_list)
-        if resp:
-            byte_steams = StringIO(resp.text)
-            df = pd.read_csv(byte_steams)
-            if raw:
-                return df
-            # processing
-            df = df[['SYMBOL', 'NAME OF COMPANY', ' SERIES', ' DATE OF LISTING', ' ISIN NUMBER', ' FACE VALUE']]
-            df.columns = ['symbol', 'name', 'series', 'date_of_listing', 'isin_number', 'face_value']
-            df['date_of_listing'] = pd.to_datetime(df['date_of_listing'])
-            return df
-    except Exception as e:
-        print(f'ERROR! - {e}\n')
-        traceback.print_exc()
-
-
-
+    def get_quotes(self, raw: bool = False) -> Union[dict, pd.DataFrame, None]:
+        """
+        Fetches the live quote of the stock symbol.
+        Args:
+            raw (bool): Pass True, if you need the raw data without processing. Deafult is False.
+        Returns:
+            dict : Returns the raw data as dictionary if raw=True.
+            DataFrame : Returns Pandas DataFrame object if raw=False.
+            None : Returns None if any error occurred.
+        """
+        try:
+            resp = scraper.get_request(url=urls.nse_equity_quote_api.format(self.symbol), initial_url=urls.nse_equity_quote.format(self.symbol))
+            if resp:
+                data = resp.json()
+                if raw:
+                    return data
+                return utils.process_stock_quote_data(quote_data=data)
+            
+        except Exception as e:
+            print(f'ERROR! - {e}\n')
+            traceback.print_exc()

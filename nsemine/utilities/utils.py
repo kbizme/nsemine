@@ -80,13 +80,12 @@ def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's')
         
         # filtering
         df['time'] = df['datetime'].dt.time
-        market_start_time_obj = pd.to_datetime("09:14:00").time() 
-        market_end_time_obj = pd.to_datetime("15:31:00").time()
-        filtered_df = df[(df['time'] > market_start_time_obj) & (df['time'] < market_end_time_obj)]
-        
+        start_time_obj = pd.to_datetime("09:14:00").time() 
+        end_time_obj = pd.to_datetime("15:31:00").time()
+        filtered_df = df[(df['time'] > start_time_obj) & (df['time'] < end_time_obj)]
         return filtered_df.drop('time', axis=1)
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Error occurred while removing pre and post market prices: {e}")
         return df
 
 

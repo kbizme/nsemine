@@ -1,14 +1,58 @@
 from nsemine.bin import scraper
 from nsemine.utilities import urls, utils
 from typing import Union
-import datetime
+from time import time
 import json
 import pandas as pd
 import traceback
 
 
 
-def get_all_nse_securities_live_snapshot(series: Union[str,list] = None, raw: bool = False) -> Union[pd.DataFrame, None]:
+
+
+def get_all_indices_live_snapshot(raw: bool = False):
+    """This Functions Returns the Live Snapshot of all the available NSE Indices.
+
+    Args:
+        raw (bool, optional): Pass True if you want the raw data without processing. Defaults to False.
+
+    Returns:
+        DataFrame: Returns the pandas DataFrame containing these columns
+        ['key', 'index', 'symbol', 'open', 'high', 'low', 'close','previous_close', 'change', 'changepct', 'year_high', 
+        'year_low','advances', 'declines', 'unchanged', 'one_week_ago', 'one_month_ago', 'one_year_ago']
+        
+        None: If any errors occurred.
+    Note:
+        This function drops the nan values. So, you may get less number of the results than expected. 
+        Use raw=True if you don't want this behavior. 
+    """
+    try:
+        resp = scraper.get_request(url=urls.al_indices_live_api, initial_url=urls.al_indices_live)
+        if not resp:
+            return None
+        
+        # initializing an empty dataframe
+        df = pd.DataFrame()
+        data = resp.json()
+        if data:
+            data = data.get('data')
+            df = pd.DataFrame(data)
+        if raw:
+            return df
+        # otherwise,
+        df = df.dropna()
+        df = df[['key', 'index', 'indexSymbol', 'open', 'high', 'low', 'last', 'previousClose', 'variation', 'percentChange', 'yearHigh', 'yearLow','advances', 'declines', 'unchanged', 'oneWeekAgo', 'oneMonthAgo', 'oneYearAgo']]
+        df.columns = ['key', 'index', 'symbol', 'open', 'high', 'low', 'close', 'previous_close', 'change', 'changepct', 'year_high', 'year_low','advances', 'declines', 'unchanged', 'one_week_ago', 'one_month_ago', 'one_year_ago']
+        df[['advances', 'declines', 'unchanged']] = df[['advances', 'declines', 'unchanged']].astype('int')
+        return df
+    except Exception as e:
+        print('ERROR! - ', e)
+        traceback.print_exc()
+        return None
+
+
+
+def get_all_securities_live_snapshot(series: Union[str,list] = None, raw: bool = False) -> Union[pd.DataFrame, None]:
     """Fetches the live snapshot all the available securities in the NSE Exchange.
     This snapshot includes the last price (close), previous_close price, change, change percentage, volume etc.
     Args:
@@ -33,7 +77,7 @@ def get_all_nse_securities_live_snapshot(series: Union[str,list] = None, raw: bo
         >>> eq_sm_df = get_all_nse_securities_live_snapshot(series=['EQ', 'SM'])
     """
     try:
-        resp = scraper.get_request(url=urls.nse_live_stock_analysis_api, initial_url=urls.nse_live_stock_analysis)
+        resp = scraper.get_request(url=urls.nse_all_stocks_live_api, initial_url=urls.nse_all_stocks_live)
         if resp.status_code == 200:
             json_data = json.loads(resp.text)
             base_df = pd.DataFrame(json_data['total']['data'])
@@ -104,3 +148,40 @@ def get_index_constituents_live_snapshot(index_name: str = 'NIFTY 50', raw: bool
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
+
+
+
+def get_fno_indices_live_snapshot():
+    """This functions returns the live snapshot of the fno indices of the NSE Exchange.
+        Fno Indices are: NIFTY 50, NIFTY NEXT 50, NIFTY BANK, NIFTY FINANCIAL SERVICES & NIFTY MIDCAP SELECT
+
+    Returns:
+        DataFrame: Returns the live snapshot as Pandas DataFrame.
+        None: If any error occurs.
+
+    Note: The DataFrame contains these columns ['datetime', 'index', 'open', 'high', 'low', 'close', 'previous_close',
+        'change', 'changepct', 'year_high', 'year_low'].
+    """
+    try:
+        resp  = scraper.get_request(url=urls.live_index_watch_json + str(time()))
+        if not resp:
+            return None
+        
+        data = resp.json()
+        data = data.get('data')
+        if data:
+            df = pd.DataFrame(data)
+
+        fno_indices = ['NIFTY 50', 'NIFTY NEXT 50', 'NIFTY BANK', 'NIFTY FIN SERVICE', 'NIFTY MID SELECT']
+        df = df[df['indexName'].isin(fno_indices)]
+        df[['yearLow', 'last', 'yearHigh', 'previousClose', 'high', 'low', 'percChange', 'open']] = df[['yearLow', 'last', 'yearHigh', 'previousClose', 'high', 'low', 'percChange', 'open']].replace(',', '', regex=True).astype('float')
+        df['change'] = round(df['last'] - df['previousClose'], 2)
+        df.drop(['indexType', 'indexOrder', 'indexSubType'], inplace=True, axis=1)
+        df['timeVal'] = pd.to_datetime(df['timeVal'], format='%b %d, %Y %H:%M:%S')
+        df = df[['timeVal', 'indexName', 'open', 'high', 'low', 'last', 'previousClose', 'change', 'percChange', 'yearHigh', 'yearLow']]
+        df.columns = ['datetime', 'index', 'open', 'high', 'low', 'close', 'previous_close', 'change', 'changepct', 'year_high', 'year_low']
+        return df.reset_index(drop=True)
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None

@@ -5,10 +5,11 @@ import json
 import pandas as pd
 import traceback
 from io import StringIO
+from datetime import datetime
 
 
 
-def market_status(market_name: str = None) -> Union[list[dict], bool, None]:
+def get_market_status(market_name: str = None) -> Union[list[dict], bool, None]:
     """
     Returns the current market status of the NSE Exchange.
     Args:
@@ -44,7 +45,7 @@ def market_status(market_name: str = None) -> Union[list[dict], bool, None]:
     
 
 
-def holiday_list() -> Union[pd.DataFrame, None]:
+def get_holiday_lists() -> Union[pd.DataFrame, None]:
     """
     This function fetches the holidays at the NSE Exchange.
 
@@ -71,7 +72,7 @@ def holiday_list() -> Union[pd.DataFrame, None]:
 
 
 
-def all_indices_list() -> Union[pd.DataFrame, None]:
+def get_all_indices_list() -> Union[pd.DataFrame, None]:
     """
     This functions fetches all the available indices at the NSE Exchange.
     Returns:
@@ -94,7 +95,7 @@ def all_indices_list() -> Union[pd.DataFrame, None]:
 
 
 
-def all_equities_list(raw: bool = False):
+def get_all_equities_list(raw: bool = False):
     """
     This functions fetches all the available equity list at the NSE Exchange.
     Args:
@@ -120,5 +121,87 @@ def all_equities_list(raw: bool = False):
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
 
+
+
+def get_securities_at_52_weeks_high(raw: bool = False, need_timestamp: bool = False) -> Union[pd.DataFrame, tuple[pd.DataFrame, datetime], dict, None]:
+    """
+    Retrieves live data for securities hitting a 52-week High from NSE India.
+    This securities list may contains stocks, ETFs, Mutual Funds etc. 
+    Returns type of this function varies based on the given arguments.
+    
+    Args:
+        raw (bool): If True, returns the raw JSON response from the API.
+                    If False (default), returns a Pandas DataFrame with processed data.
+        
+        need_timestamp (bool): The timestamp of the data, If True then the return type is a tuple containing the processed DataFrame and the timestamp.
+                               If False (default), returns only the processed DataFrame.
+                            
+    Returns:
+        df (Union[DataFrame or tuple[DataFrame, datetime] or dict or None]): Pandas DataFrame or dict if successful, None if an error occurs.
+    """
+    try:
+        resp = scraper.get_request(url=urls.new_year_high_api, initial_url=urls.new_year_high)
+        if not resp:
+            return None
+        data = resp.json()
+        if raw:
+            return data
+        
+        # otherwise
+        df = pd.DataFrame(data['data'])
+        df.columns = ['symbol', 'series', 'name', 'new_high', 'previous_high', 'previous_date', 'close', 'previous_close', 'change', 'changepct']
+        df['previous_close'] = df['previous_close'].astype('float')
+        df['previous_date'] = pd.to_datetime(df['previous_date'],  errors='coerce')
+        df['changepct'] = round(df['changepct'], 2)
+        if need_timestamp:
+            timestamp = data.get('timestamp')
+            timestamp = datetime.strptime(timestamp, '%d-%b-%Y %H:%M:%S')
+            return df, timestamp
+        return df
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
+
+
+def get_securities_at_52_weeks_low(raw: bool = False, need_timestamp: bool = False) -> Union[pd.DataFrame, tuple[pd.DataFrame, datetime], dict, None]:
+    """
+    Retrieves live data for securities hitting a 52-week Low from NSE India.
+    This securities list may contains Stocks, ETFs, Mutual Funds etc.
+    Returns type of this function varies based on the given arguments.
+
+    Args:
+        raw (bool): If True, returns the raw JSON response from the API.
+                    If False (default), returns a Pandas DataFrame with processed data.
+        
+        need_timestamp (bool): The timestamp of the data, If True then the return type is a tuple containing the processed DataFrame and the timestamp.
+                               If False (default), returns only the processed DataFrame.
+                            
+    Returns:
+        df (Union[DataFrame or tuple[DataFrame, datetime] or dict or None]): Pandas DataFrame or dict if successful, None if an error occurs.
+    """
+    try:
+        resp = scraper.get_request(url=urls.new_year_low_api, initial_url=urls.new_year_low)
+        if not resp:
+            return None
+        data = resp.json()
+        if raw:
+            return data
+        
+        # otherwise
+        df = pd.DataFrame(data['data'])
+        df.columns = ['symbol', 'series', 'name', 'new_low', 'previous_low', 'previous_date', 'close', 'previous_close', 'change', 'changepct']
+        df['previous_close'] = df['previous_close'].astype('float')
+        df['previous_date'] = pd.to_datetime(df['previous_date'],  errors='coerce')
+        df['changepct'] = round(df['changepct'], 2)
+        if need_timestamp:
+            timestamp = data.get('timestamp')
+            timestamp = datetime.strptime(timestamp, '%d-%b-%Y %H:%M:%S')
+            return df, timestamp
+        return df
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
 
 

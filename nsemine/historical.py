@@ -8,7 +8,8 @@ import traceback
 
 
 
-def fetch_stock_historical_data(stock_symbol: str, 
+# TODO: need to recheck this function
+def get_stock_historical_data(stock_symbol: str, 
                           start_datetime: datetime.datetime, 
                           end_datetime: datetime.datetime = datetime.datetime.now(), 
                           interval: int = 1, 
@@ -63,8 +64,37 @@ def fetch_stock_historical_data(stock_symbol: str,
         df['datetime'] = df['datetime'] - time_offset.seconds
         df['datetime'] = pd.to_datetime(df['datetime'], unit='s')
         df = utils.remove_pre_and_post_market_prices_from_df(df=df)
-        return df
+        # anomaly detection
+        # TODO: recheck
+        # obsolote
+        # if (df.iloc[-1][['open', 'high', 'low', 'close']].nunique() == 1) and df.iloc[-1]['volume'] < df['volume'].quantile(0.10):
+        #     print('same minute')
+        #     df.drop(df.tail(1).index, inplace=True)
+
+        # df['datetime'] = df['datetime'].apply(lambda dt: dt.replace(second=0, microsecond=0) + datetime.timedelta(minutes=(dt.second + 30) // 60)) 
+        
+        df['datetime'] = df['datetime'].apply(lambda dt: dt.replace(second=0, microsecond=0) + datetime.timedelta(minutes=1) if dt.second > 0 else dt.replace(second=0, microsecond=0))
+
+        df = remove_post_market_anomalies(df)        
+        return df.reset_index(drop=True)
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
         return None
+    
+
+
+
+def remove_post_market_anomalies(df: pd.DataFrame) -> pd.DataFrame:
+    """Removes rows where time is >= 15:29 and open, high, low, close are equal."""
+
+    post_market_time = datetime.time(15, 29)
+
+    def is_post_market_anomaly(row):
+        if row['datetime'].time() >= post_market_time and row['open'] == row['high'] == row['low'] == row['close']:
+            return True
+        return False
+
+    anomalous_rows = df[df.apply(is_post_market_anomaly, axis=1)].index
+    # df.drop(anomalous_rows, inplace=True)
+    return df

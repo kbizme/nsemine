@@ -8,9 +8,12 @@ holiday_list = 'https://www.nseindia.com/api/holiday-master?type=trading'
 
 nse_chart_data = 'https://charting.nseindia.com//Charts/ChartData/'
 
-nse_live_stock_analysis =  'https://www.nseindia.com/market-data/stocks-traded'
-nse_live_stock_analysis_api = 'https://www.nseindia.com/api/live-analysis-stocksTraded'
+nse_all_stocks_live =  'https://www.nseindia.com/market-data/stocks-traded'
+nse_all_stocks_live_api = 'https://www.nseindia.com/api/live-analysis-stocksTraded'
 
+
+al_indices_live_api = 'https://www.nseindia.com/api/allIndices'
+al_indices_live = 'https://www.nseindia.com/market-data/live-market-indices'  
 
 nse_equity_quote_api = 'https://www.nseindia.com/api/quote-equity?symbol={}'
 nse_equity_quote = 'https://www.nseindia.com/get-quotes/equity?symbol={}'
@@ -18,6 +21,11 @@ nse_equity_quote = 'https://www.nseindia.com/get-quotes/equity?symbol={}'
 nse_equity_index_api = 'https://www.nseindia.com/api/equity-stockIndices'
 nse_equity_index = 'https://www.nseindia.com/market-data/live-equity-market'
 
+# SECURITIES ANALYSIS
+new_year_high = 'https://www.nseindia.com/market-data/52-week-high-equity-market'
+new_year_low = 'https://www.nseindia.com/market-data/52-week-low-equity-market'
+new_year_high_api = 'https://www.nseindia.com/api/live-analysis-data-52weekhighstock'
+new_year_low_api = 'https://www.nseindia.com/api/live-analysis-data-52weeklowstock'
 
 # CSV
 nse_equity_list = 'https://archives.nseindia.com/content/equities/EQUITY_L.csv'
@@ -25,6 +33,7 @@ nse_equity_list = 'https://archives.nseindia.com/content/equities/EQUITY_L.csv'
 
 ####### NiftyIndices #######
 nifty_index_maping = 'https://iislliveblob.niftyindices.com/assets/json/IndexMapping.json'
+live_index_watch_json = 'https://iislliveblob.niftyindices.com/jsonfiles/LiveIndicesWatch.json?{}&_='
 
 
 
@@ -42,6 +51,7 @@ default_headers = {
 nifty_headers = {
             "Accept": "text/html,application/xhtml+xml,text/csv,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-language": "en-US,en;q=0.9,en-IN;q=0.8,en-GB;q=0.7",
+            'Connection': 'keep-alive',
             "cache-control": "max-age=0",
             "priority": "u=0, i",
             "sec-ch-ua": '"Microsoft Edge";v="129", "Not=A?Brand";v="8", "Chromium";v="129"',

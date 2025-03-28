@@ -1,11 +1,11 @@
-import gzip
 import io
-import zlib
-import brotli
-import zstandard
+import traceback
 import pandas as pd
 from datetime import datetime
-
+import zlib
+import gzip
+import brotli
+import zstandard
 
 
 
@@ -29,7 +29,6 @@ def decompress_data(compressed_data: bytes) -> bytes:
                 return f.read()
         except OSError:
             pass  
-
     # deflate check
     try:
         return zlib.decompress(compressed_data)
@@ -38,7 +37,6 @@ def decompress_data(compressed_data: bytes) -> bytes:
             return zlib.decompress(compressed_data, wbits=-zlib.MAX_WBITS) #raw deflate
         except zlib.error:
             pass 
-
     # brotli check
     try:
         return brotli.decompress(compressed_data)
@@ -50,7 +48,6 @@ def decompress_data(compressed_data: bytes) -> bytes:
         return dctx.decompress(compressed_data)
     except zstandard.ZstdError:
         pass  
-
     # If all decompression attempts fail, returning the original data.
     return compressed_data
 
@@ -166,3 +163,38 @@ def process_stock_quote_data(quote_data: dict) -> dict:
         return processed_data
     except Exception:
         return quote_data
+    
+
+def convert_ticks_to_ohlc(data: pd.DataFrame, interval: int, require_validation: bool = False):
+    """ This functions converts tick by ticks data into candle at the given interval.
+    This functions expects the dataframe to have at least these two columns named 'datetime' and 'price',
+    datetime column's data could be either epoch timestamp(ms) value or datetime64 type value.
+    """
+    try:
+        if not isinstance(data,pd.DataFrame):
+            try:
+                df = pd.DataFrame(data)
+            except Exception:
+                raise ValueError("Invalid Input Data")
+        if not isinstance(interval, int):
+            try:
+                interval = int(interval)
+            except ValueError:
+                print("Interval(minutes) must be interger or String value.")
+
+        df = data.copy()
+        if require_validation:
+            if not pd.api.types.is_datetime64_dtype(df['datetime']):
+                df['datetime'] = pd.to_datetime(df['datetime'], unit='ms')
+            df = df[(df['datetime'].dt.time >= pd.to_datetime('09:15:00').time()) & \
+                    (df['datetime'].dt.time < pd.to_datetime('15:30:00').time())]
+
+        df = df.set_index('datetime')
+        df['price'] = df['price'].astype('float')
+        df = df['price'].resample(rule=pd.Timedelta(minutes=interval), origin='start').agg(['first', 'max', 'min', 'last']).rename(columns={'first':'open', 'max': 'high', 'min': 'low', 'last':'close'})
+        df.reset_index(inplace=True)
+        return df
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return data

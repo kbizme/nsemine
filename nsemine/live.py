@@ -9,7 +9,6 @@ import traceback
 
 
 
-
 def get_all_indices_live_snapshot(raw: bool = False):
     """This Functions Returns the Live Snapshot of all the available NSE Indices.
 
@@ -185,3 +184,55 @@ def get_fno_indices_live_snapshot():
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
         return None
+    
+
+
+def get_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int = None, raw: bool = False):
+    """
+    Retrieves intraday tick-by-tick data for a given stock symbol and optionally converts it to OHLC candles.
+    **Note:** The candle interval can be any minutes. 1,2,3.9....69.......143...uptp 375. Whoa!! Are you kidding me? :))
+
+    Args:
+        stock_symbol (str): The stock symbol for which to retrieve data.
+        candle_interval (int, optional): The interval (in minutes) for OHLC candle conversion. If None, raw tick data is returned. Defaults to None.
+        raw (bool, optional): If True, returns the raw JSON response. If False, returns a pandas DataFrame. Defaults to False.
+
+    Returns:
+        pandas.DataFrame or dict: A pandas DataFrame containing tick data or OHLC candles, or the raw JSON response if raw=True.
+        Returns None in case of errors.
+
+    Example:
+        # Get raw tick data
+        >>> raw_data = get_intraday_tick_by_tick_data('INFY', raw=True)
+
+        # Get tick data as a DataFrame
+        >>> tick_data_df = get_intraday_tick_by_tick_data('INFY')
+
+        # Get OHLC candles with 5-minute interval
+        >>> ohlc_df = get_intraday_tick_by_tick_data('INFY', candle_interval=5)
+
+        # Get OHLC candles with a non-standard 143-minute interval.
+        >>> unusual_ohlc_df = get_intraday_tick_by_tick_data('INFY', candle_interval=143)
+    """
+    try:
+        resp = scraper.get_request(url=urls.stock_ticks_api.format(stock_symbol), initial_url=urls.nse_equity_quote.format(stock_symbol), headers=urls.default_headers)
+        data = resp.json()
+        if raw and not candle_interval:
+            return data
+        # otherwise
+        df = pd.DataFrame(data['grapthData'])
+        df.columns = ['datetime', 'price', 'type']
+        if not candle_interval:
+            return df.reset_index(drop=True)
+        
+        if not isinstance(candle_interval, int):
+            try:
+                candle_interval = int(candle_interval)
+            except ValueError:
+                    print("Candle Interval(minutes) must be interger or String value.")
+        return utils.convert_ticks_to_ohlc(data=df, interval=candle_interval, require_validation=True)
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
+    

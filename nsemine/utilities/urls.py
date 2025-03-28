@@ -11,7 +11,6 @@ nse_chart_data = 'https://charting.nseindia.com//Charts/ChartData/'
 nse_all_stocks_live =  'https://www.nseindia.com/market-data/stocks-traded'
 nse_all_stocks_live_api = 'https://www.nseindia.com/api/live-analysis-stocksTraded'
 
-
 al_indices_live_api = 'https://www.nseindia.com/api/allIndices'
 al_indices_live = 'https://www.nseindia.com/market-data/live-market-indices'  
 
@@ -20,6 +19,8 @@ nse_equity_quote = 'https://www.nseindia.com/get-quotes/equity?symbol={}'
 
 nse_equity_index_api = 'https://www.nseindia.com/api/equity-stockIndices'
 nse_equity_index = 'https://www.nseindia.com/market-data/live-equity-market'
+
+stock_ticks_api = 'https://www.nseindia.com/api/chart-databyindex-dynamic?index={}EQN&type=symbol'
 
 # SECURITIES ANALYSIS
 new_year_high = 'https://www.nseindia.com/market-data/52-week-high-equity-market'

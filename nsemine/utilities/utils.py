@@ -112,6 +112,8 @@ def process_stock_quote_data(quote_data: dict) -> dict:
                 processed_data['date_of_listing'] = date_of_listing
                 last_updated = datetime.strptime(_metadata.get('lastUpdateTime'), '%d-%b-%Y %H:%M:%S') or None
                 processed_data['last_updated'] = last_updated
+                indices = _metadata.get('pdSectorIndAll')
+                processed_data['indices'] = indices
             except Exception:
                 pass        
 

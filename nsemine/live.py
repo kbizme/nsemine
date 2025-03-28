@@ -215,14 +215,18 @@ def get_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int = Non
         >>> unusual_ohlc_df = get_intraday_tick_by_tick_data('INFY', candle_interval=143)
     """
     try:
-        resp = scraper.get_request(url=urls.stock_ticks_api.format(stock_symbol), initial_url=urls.nse_equity_quote.format(stock_symbol), headers=urls.default_headers)
+        resp = scraper.get_request(url=urls.stock_ticks_api.format(stock_symbol.replace('&', '%26')), initial_url=urls.nse_equity_quote.format(stock_symbol.replace('&', '%26')), headers=urls.default_headers)
         data = resp.json()
-        if raw and not candle_interval:
-            return data
+        if not candle_interval:
+            if raw:
+                return data
+        
         # otherwise
         df = pd.DataFrame(data['grapthData'])
         df.columns = ['datetime', 'price', 'type']
         if not candle_interval:
+            print('i am here')
+            df['datetime'] = pd.to_datetime(df['datetime'], unit='ms', errors='coerce')
             return df.reset_index(drop=True)
         
         if not isinstance(candle_interval, int):
@@ -236,3 +240,27 @@ def get_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int = Non
         traceback.print_exc()
         return None
     
+
+
+def get_stock_quotes(stock_symbol: str, raw: bool = False) -> Union[dict, None]:
+    """
+    Fetches the live quote of the given stock symbol.
+    Args:
+        stock_symbol (str): The stock symbol (e.g., "TCS" etc)
+        raw (bool): Pass True, if you need the raw data without processing. Deafult is False.
+        
+    Returns:
+        quote_data (dict, None) : Returns the raw data as dictionary if raw=True. By default, it returns cleaned and processed dictionary.
+        Returns None if any error occurred.
+    """
+    try:
+        resp = scraper.get_request(url=urls.nse_equity_quote_api.format(stock_symbol.replace('&', '%26')), initial_url=urls.nse_equity_quote.format(stock_symbol.replace('&', '%26')))
+        if resp:
+            data = resp.json()
+            if raw:
+                return data
+            return utils.process_stock_quote_data(quote_data=data)
+        
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()

@@ -1,5 +1,4 @@
-from nsemine.bin import scraper
-from nsemine.utilities import urls, utils
+from nsemine import live, historical, fno, nse
 from typing import Union
 import json
 import pandas as pd
@@ -26,28 +25,22 @@ class NSEStock:
             self.trading_status = self.quote_data.get('trading_status')
             self.number_of_shares = self.quote_data.get('number_of_shares')
             self.face_value = self.quote_data.get('face_value')
+            self.indices = self.quote_data.get('indices')
         else:
             print(f"The Symbol: {self.symbol} is not properly initialized.")
 
 
-    def get_quotes(self, raw: bool = False) -> Union[dict, pd.DataFrame, None]:
+    def get_quotes(self, raw: bool = False) -> Union[dict, None]:
         """
         Fetches the live quote of the stock symbol.
         Args:
             raw (bool): Pass True, if you need the raw data without processing. Deafult is False.
         Returns:
-            dict : Returns the raw data as dictionary if raw=True.
-            DataFrame : Returns Pandas DataFrame object if raw=False.
-            None : Returns None if any error occurred.
+            quote_data (dict, None) : Returns the raw data as dictionary if raw=True. By default, it returns cleaned and processed dictionary.
+            Returns None if any error occurred.
         """
         try:
-            resp = scraper.get_request(url=urls.nse_equity_quote_api.format(self.symbol), initial_url=urls.nse_equity_quote.format(self.symbol))
-            if resp:
-                data = resp.json()
-                if raw:
-                    return data
-                return utils.process_stock_quote_data(quote_data=data)
-            
+            return live.get_stock_quotes(stock_symbol=self.symbol, raw=raw)
         except Exception as e:
             print(f'ERROR! - {e}\n')
             traceback.print_exc()

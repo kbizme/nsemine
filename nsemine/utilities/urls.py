@@ -22,6 +22,9 @@ nse_equity_index = 'https://www.nseindia.com/market-data/live-equity-market'
 
 stock_ticks_api = 'https://www.nseindia.com/api/chart-databyindex-dynamic?index={}EQN&type=symbol'
 
+pre_open_api = 'https://www.nseindia.com/api/market-data-pre-open?key={}'
+pre_open = 'https://www.nseindia.com/market-data/pre-open-market-cm-and-emerge-market'
+
 # SECURITIES ANALYSIS
 new_year_high = 'https://www.nseindia.com/market-data/52-week-high-equity-market'
 new_year_low = 'https://www.nseindia.com/market-data/52-week-low-equity-market'

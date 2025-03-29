@@ -123,6 +123,62 @@ def get_all_equities_list(raw: bool = False):
 
 
 
+def get_pre_open_data(key: str = 'NIFTY', raw: bool = False):
+    """
+    Retrieves pre-open market data from the NSE India Website.
+
+    This function fetches pre-open market data for a specified instrument (e.g., NIFTY)
+    from the NSE India API. It can return either the raw JSON response or a processed
+    pandas DataFrame containing relevant market data.
+
+    Args:
+        key (str, optional): The instrument key to fetch data for (e.g., 'NIFTY', 'BANKNIFTY', 'SME', 'FO', 'OTHERS', 'ALL').
+            Defaults to 'NIFTY'.
+        raw (bool, optional): If True, returns the raw JSON response from the API.
+            If False, returns a processed pandas DataFrame. Defaults to False.
+
+    Returns:
+        df (pandas.DataFrame or dict or None):
+            - If raw is False, returns a pandas DataFrame with columns: ['symbol', 'iep', 'previous_close', 'change', 'changepct', 'quantity',
+              'total_turn_over', 'market_cap', 'year_high', 'year_low'].
+            - If raw is True, returns the raw JSON response (a dictionary).
+            - Returns None if an error occurs during the API request or data processing.
+    Raises:
+        Exception: If any error occurs during the API request or data processing, the error
+            is printed to the console, and the traceback is also printed.
+
+    Example:
+        >>> df = get_pre_open_data(key='NIFTY')
+        >>> print(df.head())
+        >>> raw_data = get_pre_open_data(key='BANKNIFTY', raw=True)
+        >>> print(raw_data)
+    """
+    try:
+        
+        resp = scraper.get_request(url=urls.pre_open_api.format(key), initial_url=urls.pre_open)
+        if not resp:
+            return None
+        data = resp.json()
+        if raw:
+            return data
+        # otherwise
+        container = list()
+        data = data.get('data')
+        for item in data:
+            meta_data = item.get('metadata')
+            if meta_data:
+                container.append(meta_data)
+        df = pd.DataFrame(container)
+        df = df[['symbol', 'iep', 'previousClose', 'change', 'pChange', 'finalQuantity', 'totalTurnover', 'marketCap', 'yearHigh', 'yearLow']]
+        df.columns = ['symbol', 'iep', 'previous_close', 'change', 'changepct', 'quantity', 'total_turn_over', 'market_cap', 'year_high', 'year_low']
+        return df
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
+
+
+
 def get_securities_at_52_weeks_high(raw: bool = False, need_timestamp: bool = False) -> Union[pd.DataFrame, tuple[pd.DataFrame, datetime], dict, None]:
     """
     Retrieves live data for securities hitting a 52-week High from NSE India.

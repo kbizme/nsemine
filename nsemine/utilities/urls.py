@@ -1,8 +1,10 @@
-from nsemine.bin import cookie
+from nsemine.bin import auth
 
 
 
 ####### NSEIndia #######
+first_boy = 'https://www.nseindia.com/get-quotes/equity?symbol=RELIANCE'
+
 market_status = 'https://www.nseindia.com/api/marketStatus'
 holiday_list = 'https://www.nseindia.com/api/holiday-master?type=trading'
 

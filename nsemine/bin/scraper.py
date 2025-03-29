@@ -20,20 +20,8 @@ def get_request(url: str, headers: dict = None, params: dict = None, initial_url
                 if response.status_code == 200:
                     return response
                 time.sleep(sleep_time)
-            except requests.exceptions.Timeout as e:
-                print(f"Request timed out: {e}\nRetrying...")
-                time.sleep(sleep_time)
-                continue
-            except requests.exceptions.ConnectionError as e:
-                print(f"Connection error: {e}\nRetrying...")
-                time.sleep(sleep_time)
-                continue
-            except requests.exceptions.HTTPError as e:
-                print(f"HTTP error: {e}\nRetrying...")
-                time.sleep(sleep_time)
-                continue
             except requests.exceptions.RequestException as e:
-                print(f"Network error during request: {e}\nRetrying...")
+                print(f"Error during request: {e}\nRetrying...")
                 time.sleep(sleep_time)
                 continue
         print("Request failed after multiple retries.")

@@ -87,13 +87,13 @@ def get_all_indices_live_snapshot(raw: bool = False):
         
         # initializing an empty dataframe
         df = pd.DataFrame()
-        data = resp.json()
-        if data:
-            data = data.get('data')
-            df = pd.DataFrame(data)
+        raw_data = resp.json()
         if raw:
-            return df
-        # otherwise,
+            return raw_data
+        
+        # otherwise
+        data = raw_data.get('data')
+        df = pd.DataFrame(data)
         df = df.dropna()
         df = df[['key', 'index', 'indexSymbol', 'open', 'high', 'low', 'last', 'previousClose', 'variation', 'percentChange', 'yearHigh', 'yearLow','advances', 'declines', 'unchanged', 'oneWeekAgo', 'oneMonthAgo', 'oneYearAgo']]
         df.columns = ['key', 'index', 'symbol', 'open', 'high', 'low', 'close', 'previous_close', 'change', 'changepct', 'year_high', 'year_low','advances', 'declines', 'unchanged', 'one_week_ago', 'one_month_ago', 'one_year_ago']

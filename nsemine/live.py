@@ -149,10 +149,11 @@ def get_index_constituents_live_snapshot(index_name: str = 'NIFTY 50', raw: bool
         traceback.print_exc()
 
 
-
-def get_fno_indices_live_snapshot():
+def get_fno_indices_live_snapshot(df: bool = True):
     """This functions returns the live snapshot of the fno indices of the NSE Exchange.
         Fno Indices are: NIFTY 50, NIFTY NEXT 50, NIFTY BANK, NIFTY FINANCIAL SERVICES & NIFTY MIDCAP SELECT
+    Args:
+        df (bool) : If you don't want dataframe format, then you can pass df=False, then the dictionary format data will be returned. defaults to True
 
     Returns:
         DataFrame: Returns the live snapshot as Pandas DataFrame.
@@ -168,10 +169,32 @@ def get_fno_indices_live_snapshot():
         
         data = resp.json()
         data = data.get('data')
-        if data:
-            df = pd.DataFrame(data)
-
         fno_indices = ['NIFTY 50', 'NIFTY NEXT 50', 'NIFTY BANK', 'NIFTY FIN SERVICE', 'NIFTY MID SELECT']
+        if not data:
+            return
+        if not df:
+            fno_data = {}
+            for item in data:
+                if item.get('indexName') in fno_indices:
+                    close = float(item.get('last').replace(',',''))
+                    previous_close = float(item.get('previousClose').replace(',',''))
+                    fno_data[item.get('indexName')] = {
+                        'datetime': datetime.strptime(item.get('timeVal'), '%b %d, %Y %H:%M:%S'),
+                        'open': float(item.get('open').replace(',', '')),
+                        'high': float(item.get('high').replace(',', '')),
+                        'low': float(item.get('low').replace(',', '')),
+                        'close': close,
+                        'previous_close': previous_close,
+                        'change': round(close - previous_close, 2),
+                        'changepct': float(item.get('percChange').replace(',', '')),
+                        'year_high': float(item.get('yearHigh').replace(',', '')),
+                        'year_low': float(item.get('yearLow').replace(',', ''))
+                    }
+                if len(fno_data) == 5:
+                    break
+            return fno_data
+        # dataframe
+        df = pd.DataFrame(data)
         df = df[df['indexName'].isin(fno_indices)]
         df[['yearLow', 'last', 'yearHigh', 'previousClose', 'high', 'low', 'percChange', 'open']] = df[['yearLow', 'last', 'yearHigh', 'previousClose', 'high', 'low', 'percChange', 'open']].replace(',', '', regex=True).astype('float')
         df['change'] = round(df['last'] - df['previousClose'], 2)

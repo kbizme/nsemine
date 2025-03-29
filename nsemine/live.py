@@ -10,6 +10,60 @@ import traceback
 
 
 
+def get_index_live_price(index_name: str = 'NIFTY 50', raw: bool = False):
+    """
+    Retrieves live price data for a specified stock market index from the NSE (National Stock Exchange of India).
+
+    Args:
+        index_name (str, optional): The name of the index to fetch data for. Defaults to 'NIFTY 50'.
+        raw (bool, optional): If True, returns the raw JSON response from the API. If False, returns a processed dictionary. Defaults to False.
+
+    Returns:
+        dict: A dictionary containing the processed index data, including open, high, low, close, previous close, change, change percentage, year high, year low, and optionally datetime.
+        If raw is True, returns the raw JSON response as a dictionary.
+        Returns None if an error occurs.
+
+    Example:
+        >>> get_index_live_price()
+        >>> get_index_live_price(index_name='NIFTY BANK', raw=True)
+    """
+    try:
+        params = {
+            'index': index_name,
+        }
+        resp = scraper.get_request(url=urls.nse_equity_index_api, params=params, initial_url=urls.nse_equity_index)
+        raw_data = resp.json()
+        if raw:
+            return raw_data
+        # otherwise,
+        data = raw_data['data']
+        data = data[0]
+        index_data = {
+            'symbol': data.get('symbol'),
+            'open': data.get('open'),
+            'high': data.get('dayHigh'),
+            'low': data.get('dayLow'),
+            'close': data.get('lastPrice'),
+            'previous_close': data.get('previousClose'),
+            'change': round(data.get('change'), 2),
+            'changepct': data.get('pChange'),
+            'year_high': data.get('yearHigh'),
+            'year_low': data.get('yearLow')
+        }
+        try:
+            index_data['datetime'] = datetime.strptime(data.get('lastUpdateTime'), '%d-%b-%Y %H:%M:%S'),
+        except:
+            pass
+        return index_data
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+
+        
+
+
+
+
 def get_all_indices_live_snapshot(raw: bool = False):
     """This Functions Returns the Live Snapshot of all the available NSE Indices.
 

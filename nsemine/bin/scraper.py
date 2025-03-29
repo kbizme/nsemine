@@ -5,11 +5,7 @@ from traceback import print_exc
 from nsemine.bin import auth
 import time
 
-from datetime import datetime
 
-
-
-# cookies = None
 
 def get_request(url: str, headers: dict = None, params: dict = None, initial_url: str = None) -> Union[requests.Response, None]:
     try:

@@ -54,7 +54,6 @@ def set_session_token(session_token):
         if existing_row:
             cursor.execute("UPDATE credentials SET session_token=?, updated_on=? WHERE id=?", (data, str(datetime.now()), 'almighty'))
         else:
-            print('here')
             cursor.execute("INSERT INTO credentials (id, session_token, updated_on) VALUES (?, ?, ?)", ('almighty', data, str(datetime.now())))
         conn.commit()
     except Exception as e:

@@ -306,7 +306,6 @@ def get_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int = Non
         df = pd.DataFrame(data['grapthData'])
         df.columns = ['datetime', 'price', 'type']
         if not candle_interval:
-            print('i am here')
             df['datetime'] = pd.to_datetime(df['datetime'], unit='ms', errors='coerce')
             return df.reset_index(drop=True)
         

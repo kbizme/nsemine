@@ -1,6 +1,7 @@
 from nsemine.bin import scraper
 from nsemine.utilities import urls, utils
 from typing import Union
+from datetime import datetime
 from time import time
 import json
 import pandas as pd

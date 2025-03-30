@@ -9,6 +9,7 @@ market_status = 'https://www.nseindia.com/api/marketStatus'
 holiday_list = 'https://www.nseindia.com/api/holiday-master?type=trading'
 
 nse_chart_data = 'https://charting.nseindia.com/Charts/ChartData/'
+nse_chart_data_symbol = 'https://charting.nseindia.com//Charts/symbolhistoricaldata/'
 
 nse_all_stocks_live =  'https://www.nseindia.com/market-data/stocks-traded'
 nse_all_stocks_live_api = 'https://www.nseindia.com/api/live-analysis-stocksTraded'

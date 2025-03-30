@@ -1,7 +1,7 @@
 import io
 import traceback
 import pandas as pd
-from datetime import datetime, time as time_obj
+from datetime import datetime, timedelta, time as time_obj
 import zlib
 import gzip
 import brotli
@@ -213,5 +213,26 @@ def remove_post_market_anomalies(df: pd.DataFrame) -> pd.DataFrame:
         anomalous_rows = df[df.apply(is_post_market_anomaly, axis=1)].index
         df.drop(anomalous_rows, inplace=True)
         return df
+    except Exception:
+        return df
+
+
+def process_chart_response(df: pd.DataFrame, start_datetime: datetime, interval: str) -> pd.DataFrame:
+    try:
+        df = df[df['t'] >= int(start_datetime.timestamp())]
+        df.columns = ['datetime', 'open', 'high', 'low', 'close', 'volume']
+
+        if interval in ('D', 'W', 'M'):
+            df['datetime'] = pd.to_datetime(df['datetime'], unit='s')
+            return df
+        
+        time_offset = timedelta(minutes=int(interval) - 1, seconds=59)
+        df['datetime'] = df['datetime'] - time_offset.seconds
+        df['datetime'] = pd.to_datetime(df['datetime'], unit='s')
+        df = remove_pre_and_post_market_prices_from_df(df=df)
+        df['datetime'] = df['datetime'].apply(lambda dt: dt.replace(second=0, microsecond=0) + timedelta(minutes=1) if dt.second > 1 else dt.replace(second=0, microsecond=0))
+        # anomaly detection
+        df = remove_post_market_anomalies(df)        
+        return df.reset_index(drop=True)
     except Exception:
         return df

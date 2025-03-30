@@ -7,14 +7,13 @@ import time
 
 
 
-def get_request(url: str, headers: dict = None, params: dict = None, initial_url: str = None) -> Union[requests.Response, None]:
+def get_request(url: str, headers: dict = None, params: dict = None) -> Union[requests.Response, None]:
     try:
         if not headers:
-            headers = urls.nifty_headers
+            headers = urls.get_nse_headers()
         session = requests.Session()
         session_token = auth.get_session_token()
         if not session_token:
-            if initial_url:
                 session.get(url=urls.first_boy, headers=urls.default_headers, timeout=15)
                 session_token = session.cookies.get_dict()
                 auth.set_session_token(session_token)

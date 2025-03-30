@@ -1,95 +1,10 @@
-import io
 import traceback
 import pandas as pd
 from datetime import datetime, timedelta, time as time_obj
-import zlib
-import gzip
-import brotli
-import zstandard
-
-
-
-def decompress_data(compressed_data: bytes) -> bytes:
-    """
-    Automatically detects and decompresses data compressed with gzip, deflate, brotli, or zstd.
-
-    Args:
-        compressed_data: The compressed bytes.
-
-    Returns:
-        The decompressed bytes, or the original bytes if decompression fails.
-    """
-    if not compressed_data:
-        return b""
-
-    # gzip check
-    if compressed_data.startswith(b'\x1f\x8b'):
-        try:
-            with gzip.GzipFile(fileobj=io.BytesIO(compressed_data), mode='rb') as f:
-                return f.read()
-        except OSError:
-            pass  
-    # deflate check
-    try:
-        return zlib.decompress(compressed_data)
-    except zlib.error:
-        try:
-            return zlib.decompress(compressed_data, wbits=-zlib.MAX_WBITS) #raw deflate
-        except zlib.error:
-            pass 
-    # brotli check
-    try:
-        return brotli.decompress(compressed_data)
-    except brotli.error:
-        pass  
-    # zstd check
-    try:
-        dctx = zstandard.ZstdDecompressor()
-        return dctx.decompress(compressed_data)
-    except zstandard.ZstdError:
-        pass  
-    # If all decompression attempts fail, returning the original data.
-    return compressed_data
-
-
-
-def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's') -> pd.DataFrame:
-    """
-    This function expects that the given dataframe has a column 'datetime'.
-
-    Args:
-        df (DataFrame) : A Pandas DataFrame
-        unit (str): Unit of the timestamp.
-    Returns:
-        df (DataFrame) : The processed dataframe.
-    
-    Note:
-        If the datetime of the given dataframe is in timestamp, then you can provide the unit, Default is 'Second'.
-        And of any error occurs during the conversion, it returns the given data as it is.
-        
-    """
-    try:
-        if not isinstance(df, pd.DataFrame):
-            return df
-        # otherwise,
-        if not pd.api.types.is_datetime64_dtype(df['datetime']):
-            df['datetime'] = pd.to_datetime(df['datetime'], unit=unit)
-        
-        # filtering
-        df['time'] = df['datetime'].dt.time
-        start_time_obj = pd.to_datetime("09:14:59").time() 
-        end_time_obj = pd.to_datetime("15:30:00").time()
-        filtered_df = df[(df['time'] > start_time_obj) & (df['time'] < end_time_obj)]
-        return filtered_df.drop('time', axis=1)
-    except Exception as e:
-        print(f"Error occurred while removing pre and post market prices: {e}")
-        return df
-
 
 
 def process_stock_quote_data(quote_data: dict) -> dict:
     try:
-        # initializng an empty dictionary
         processed_data = dict()
         _info = quote_data.get('info')
         if _info:
@@ -113,7 +28,7 @@ def process_stock_quote_data(quote_data: dict) -> dict:
                 last_updated = datetime.strptime(_metadata.get('lastUpdateTime'), '%d-%b-%Y %H:%M:%S') or None
                 processed_data['last_updated'] = last_updated
                 indices = _metadata.get('pdSectorIndAll')
-                processed_data['indices'] = indices
+                processed_data['top_indices'] = indices[:5]
             except Exception:
                 pass        
 
@@ -161,17 +76,33 @@ def process_stock_quote_data(quote_data: dict) -> dict:
             if _preopen_price:
                 processed_data['preopen_price'] = _preopen_price.get('IEP')
 
-        # finally returning the processed data    
         return processed_data
     except Exception:
         return quote_data
-    
+
+
+
+
+def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's') -> pd.DataFrame:
+    try:
+        if not isinstance(df, pd.DataFrame):
+            return df
+        if not pd.api.types.is_datetime64_dtype(df['datetime']):
+            df['datetime'] = pd.to_datetime(df['datetime'], unit=unit)
+        
+        df['time'] = df['datetime'].dt.time
+        start_time_obj = pd.to_datetime("09:14:59").time() 
+        end_time_obj = pd.to_datetime("15:30:00").time()
+        filtered_df = df[(df['time'] > start_time_obj) & (df['time'] < end_time_obj)]
+        return filtered_df.drop('time', axis=1)
+    except Exception as e:
+        print(f"Error occurred while removing pre and post market prices: {e}")
+        return df
+
+
+
 
 def convert_ticks_to_ohlc(data: pd.DataFrame, interval: int, require_validation: bool = False):
-    """ This functions converts tick by ticks data into candle at the given interval.
-    This functions expects the dataframe to have at least these two columns named 'datetime' and 'price',
-    datetime column's data could be either epoch timestamp(ms) value or datetime64 type value.
-    """
     try:
         if not isinstance(data,pd.DataFrame):
             try:
@@ -203,7 +134,6 @@ def convert_ticks_to_ohlc(data: pd.DataFrame, interval: int, require_validation:
 
 
 def remove_post_market_anomalies(df: pd.DataFrame) -> pd.DataFrame:
-    """Removes rows where time is >= 15:29 and open, high, low, close are equal."""
     try:
         post_market_time = time_obj(hour=15, minute=29)
         def is_post_market_anomaly(row):

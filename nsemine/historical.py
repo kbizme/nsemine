@@ -2,7 +2,7 @@ from nsemine.bin import scraper
 from nsemine.utilities import urls, utils
 from nsemine.utilities.tokens import index_tokens
 from typing import Union
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
 import traceback
 
@@ -52,7 +52,7 @@ def get_stock_historical_data(stock_symbol: str,
             params.update({'timeInterval': int(interval), 'chartPeriod': 'I'})
 
 
-        resp = scraper.get_request(url=urls.nse_chart_data, headers=urls.default_headers, params=params)
+        resp = scraper.get_request(url=urls.nse_chart, headers=urls.default_headers, params=params)
         raw_data = resp.json()
         if raw:
             return raw_data
@@ -117,7 +117,7 @@ def get_index_historical_data(index: str,
             params.update({'timeInterval': 1, 'chartPeriod': interval})
         else:
             params.update({'timeInterval': int(interval), 'chartPeriod': 'I'})
-        resp = scraper.get_request(url=urls.nse_chart_data_symbol, params=params)
+        resp = scraper.get_request(url=urls.nse_chart_symbol, params=params)
         raw_data = resp.json()
         if raw:
             return raw_data

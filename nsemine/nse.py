@@ -155,7 +155,7 @@ def get_pre_open_data(key: str = 'NIFTY', raw: bool = False):
     """
     try:
         
-        resp = scraper.get_request(url=urls.pre_open_api.format(key), initial_url=urls.pre_open)
+        resp = scraper.get_request(url=urls.pre_open.format(key))
         if not resp:
             return None
         data = resp.json()
@@ -196,7 +196,7 @@ def get_securities_at_52_weeks_high(raw: bool = False, need_timestamp: bool = Fa
         df (Union[DataFrame or tuple[DataFrame, datetime] or dict or None]): Pandas DataFrame or dict if successful, None if an error occurs.
     """
     try:
-        resp = scraper.get_request(url=urls.new_year_high_api, initial_url=urls.new_year_high)
+        resp = scraper.get_request(url=urls.new_year_high)
         if not resp:
             return None
         data = resp.json()
@@ -237,7 +237,7 @@ def get_securities_at_52_weeks_low(raw: bool = False, need_timestamp: bool = Fal
         df (Union[DataFrame or tuple[DataFrame, datetime] or dict or None]): Pandas DataFrame or dict if successful, None if an error occurs.
     """
     try:
-        resp = scraper.get_request(url=urls.new_year_low_api, initial_url=urls.new_year_low)
+        resp = scraper.get_request(url=urls.new_year_low)
         if not resp:
             return None
         data = resp.json()

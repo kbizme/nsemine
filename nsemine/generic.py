@@ -40,7 +40,7 @@ class NSEStock:
             Returns None if any error occurred.
         """
         try:
-            return live.get_stock_quotes(stock_symbol=self.symbol, raw=raw)
+            return live.get_stock_live_quotes(stock_symbol=self.symbol, raw=raw)
         except Exception as e:
             print(f'ERROR! - {e}\n')
             traceback.print_exc()

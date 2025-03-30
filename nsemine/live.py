@@ -10,12 +10,37 @@ import traceback
 
 
 
-def get_index_live_price(index_name: str = 'NIFTY 50', raw: bool = False):
+def get_stock_live_quotes(stock_symbol: str, raw: bool = False) -> Union[dict, None]:
+    """
+    Fetches the live quote of the given stock symbol.
+    Args:
+        stock_symbol (str): The stock symbol (e.g., "TCS" etc)
+        raw (bool): Pass True, if you need the raw data without processing. Deafult is False.
+        
+    Returns:
+        quote_data (dict, None) : Returns the raw data as dictionary if raw=True. By default, it returns cleaned and processed dictionary.
+        Returns None if any error occurred.
+    """
+    try:
+        resp = scraper.get_request(url=urls.nse_equity_quote.format(stock_symbol.replace('&', '%26')))
+        if resp:
+            data = resp.json()
+            if raw:
+                return data
+            return utils.process_stock_quote_data(quote_data=data)
+        
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+
+
+
+def get_index_live_price(index: str = 'NIFTY 50', raw: bool = False):
     """
     Retrieves live price data for a specified stock market index from the NSE (National Stock Exchange of India).
 
     Args:
-        index_name (str, optional): The name of the index to fetch data for. Defaults to 'NIFTY 50'.
+        index (str, optional): The name of the index to fetch data for. Defaults to 'NIFTY 50'.
         raw (bool, optional): If True, returns the raw JSON response from the API. If False, returns a processed dictionary. Defaults to False.
 
     Returns:
@@ -29,9 +54,9 @@ def get_index_live_price(index_name: str = 'NIFTY 50', raw: bool = False):
     """
     try:
         params = {
-            'index': index_name,
+            'index': index,
         }
-        resp = scraper.get_request(url=urls.nse_equity_index_api, params=params, initial_url=urls.nse_equity_index)
+        resp = scraper.get_request(url=urls.nse_equity_index, params=params)
         raw_data = resp.json()
         if raw:
             return raw_data
@@ -81,7 +106,7 @@ def get_all_indices_live_snapshot(raw: bool = False):
         Use raw=True if you don't want this behavior. 
     """
     try:
-        resp = scraper.get_request(url=urls.al_indices_live_api, initial_url=urls.al_indices_live)
+        resp = scraper.get_request(url=urls.al_indices)
         if not resp:
             return None
         
@@ -106,7 +131,7 @@ def get_all_indices_live_snapshot(raw: bool = False):
 
 
 
-def get_all_securities_live_snapshot(series: Union[str,list] = None, raw: bool = False) -> Union[pd.DataFrame, None]:
+def get_all_securities_live_snapshot(series: Union[str,list] = None, raw: bool = False) -> Union[pd.DataFrame, dict, None]:
     """Fetches the live snapshot all the available securities in the NSE Exchange.
     This snapshot includes the last price (close), previous_close price, change, change percentage, volume etc.
     Args:
@@ -115,8 +140,8 @@ def get_all_securities_live_snapshot(series: Union[str,list] = None, raw: bool =
                         Refer to this link: https://www.nseindia.com/market-data/legend-of-series
         raw (bool): Pass True, if you need the raw data without processing.
     Returns:
-        DataFrame : Returns Pandas DataFrame object if succeed.
-                    OR None if any error occurred.
+        data (DataFrame or dict or None) : Returns Pandas DataFrame object if succeed. Returns dictionary if raw=True, 
+        and returns None if any error occurred.
     Example:
         To get the processed DataFrame for all securities:
         >>> df = get_all_nse_securities_live_snapshot()
@@ -131,14 +156,13 @@ def get_all_securities_live_snapshot(series: Union[str,list] = None, raw: bool =
         >>> eq_sm_df = get_all_nse_securities_live_snapshot(series=['EQ', 'SM'])
     """
     try:
-        resp = scraper.get_request(url=urls.nse_all_stocks_live_api, initial_url=urls.nse_all_stocks_live)
+        resp = scraper.get_request(url=urls.nse_all_stocks_live)
         if resp.status_code == 200:
-            json_data = json.loads(resp.text)
-            base_df = pd.DataFrame(json_data['total']['data'])
+            data = resp.json()
             if raw:
-                return base_df
-            
+                return data
             # processing
+            base_df = pd.DataFrame(data['total']['data'])
             df = base_df[['symbol', 'series', 'lastPrice', 'previousClose', 'change', 'pchange', 'totalTradedVolume', 'totalTradedValue', 'totalMarketCap']].copy()
             df.columns = ['symbol', 'series', 'close', 'previous_close', 'change', 'changepct', 'volume', 'traded_value', 'market_cap']
             df['volume'] = df['volume'] * 1_00000
@@ -156,7 +180,7 @@ def get_all_securities_live_snapshot(series: Union[str,list] = None, raw: bool =
 
 
 
-def get_index_constituents_live_snapshot(index_name: str = 'NIFTY 50', raw: bool = False):
+def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = False):
     """
     Retrieves live snapshot data of constituents for a specified stock market index from the NSE (National Stock Exchange of India).
 
@@ -164,7 +188,7 @@ def get_index_constituents_live_snapshot(index_name: str = 'NIFTY 50', raw: bool
     It may return either the raw JSON response or a processed Pandas DataFrame based on the input parameters.
 
     Args:
-        index_name (str, optional): The name of the index for which to retrieve constituent data. Defaults to 'NIFTY 50'.
+        index (str, optional): The name of the index for which to retrieve constituent data. Defaults to 'NIFTY 50'.
         raw (bool, optional): If True, returns the raw JSON response from the API. If False, returns a processed Pandas DataFrame. Defaults to False.
 
     Returns:
@@ -184,9 +208,9 @@ def get_index_constituents_live_snapshot(index_name: str = 'NIFTY 50', raw: bool
     """
     try:
         params = {
-            'index': index_name,
+            'index': index,
         }
-        resp = scraper.get_request(url=urls.nse_equity_index_api, params=params, initial_url=urls.nse_equity_index)
+        resp = scraper.get_request(url=urls.nse_equity_index, params=params)
         if raw:
             return resp.json()
         
@@ -299,7 +323,7 @@ def get_stock_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int
         >>> unusual_ohlc_df = get_intraday_tick_by_tick_data('INFY', candle_interval=143)
     """
     try:
-        resp = scraper.get_request(url=urls.stock_ticks_api.format(stock_symbol.replace('&', '%26')), initial_url=urls.nse_equity_quote.format(stock_symbol.replace('&', '%26')), headers=urls.default_headers)
+        resp = scraper.get_request(url=urls.ticks_chart.format(stock_symbol.replace('&', '%26')), headers=urls.default_headers)
         data = resp.json()
         if not candle_interval:
             if raw:
@@ -323,27 +347,3 @@ def get_stock_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int
         traceback.print_exc()
         return None
     
-
-
-def get_stock_quotes(stock_symbol: str, raw: bool = False) -> Union[dict, None]:
-    """
-    Fetches the live quote of the given stock symbol.
-    Args:
-        stock_symbol (str): The stock symbol (e.g., "TCS" etc)
-        raw (bool): Pass True, if you need the raw data without processing. Deafult is False.
-        
-    Returns:
-        quote_data (dict, None) : Returns the raw data as dictionary if raw=True. By default, it returns cleaned and processed dictionary.
-        Returns None if any error occurred.
-    """
-    try:
-        resp = scraper.get_request(url=urls.nse_equity_quote_api.format(stock_symbol.replace('&', '%26')), initial_url=urls.nse_equity_quote.format(stock_symbol.replace('&', '%26')))
-        if resp:
-            data = resp.json()
-            if raw:
-                return data
-            return utils.process_stock_quote_data(quote_data=data)
-        
-    except Exception as e:
-        print(f'ERROR! - {e}\n')
-        traceback.print_exc()

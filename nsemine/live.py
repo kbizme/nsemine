@@ -218,6 +218,7 @@ def get_fno_indices_live_snapshot(df: bool = True) -> Union[pd.DataFrame, dict, 
     """
     try:
         resp  = scraper.get_request(url=urls.live_index_watch_json + str(time()))
+        url = 'https://www.nseindia.com/api/NextApi/apiClient?functionName=getIndexData&&type=All'
         if not resp:
             return None
         

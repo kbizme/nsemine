@@ -30,7 +30,7 @@ def get_stock_intraday_interval_data(stock_symbol: str,
         then you will get the data in dictionary format. Returns None If any error occurs during data fetching or processing.
 
     Notes:
-        - You can try other unsual intervals like 7, 18, 50, 143 minutes, etc than those commonly used intervals, but the data might not be properly organized or accurate.
+        - You can try other unsual intervals like 7, 18, 50, 143 minutes, etc than those commonly used intervals.
         - If you need daily interval data, please use get_stock_historical_data() function in historical module.
         - If raw=False, the function performs the following processing steps:
             1.  Fixes the candle time shift.

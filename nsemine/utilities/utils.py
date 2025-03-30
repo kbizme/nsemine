@@ -1,7 +1,7 @@
 import io
 import traceback
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, time as time_obj
 import zlib
 import gzip
 import brotli
@@ -77,8 +77,8 @@ def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's')
         
         # filtering
         df['time'] = df['datetime'].dt.time
-        start_time_obj = pd.to_datetime("09:14:00").time() 
-        end_time_obj = pd.to_datetime("15:31:00").time()
+        start_time_obj = pd.to_datetime("09:14:59").time() 
+        end_time_obj = pd.to_datetime("15:30:00").time()
         filtered_df = df[(df['time'] > start_time_obj) & (df['time'] < end_time_obj)]
         return filtered_df.drop('time', axis=1)
     except Exception as e:
@@ -200,3 +200,18 @@ def convert_ticks_to_ohlc(data: pd.DataFrame, interval: int, require_validation:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
         return data
+
+
+def remove_post_market_anomalies(df: pd.DataFrame) -> pd.DataFrame:
+    """Removes rows where time is >= 15:29 and open, high, low, close are equal."""
+    try:
+        post_market_time = time_obj(hour=15, minute=29)
+        def is_post_market_anomaly(row):
+            if row['datetime'].time() >= post_market_time and row['open'] == row['high'] == row['low'] == row['close']:
+                return True
+            return False
+        anomalous_rows = df[df.apply(is_post_market_anomaly, axis=1)].index
+        df.drop(anomalous_rows, inplace=True)
+        return df
+    except Exception:
+        return df

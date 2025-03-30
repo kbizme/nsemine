@@ -268,10 +268,10 @@ def get_fno_indices_live_snapshot(df: bool = True) -> Union[pd.DataFrame, dict, 
     
 
 
-def get_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int = None, raw: bool = False):
+def get_stock_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int = None, raw: bool = False):
     """
     Retrieves intraday tick-by-tick data for a given stock symbol and optionally converts it to OHLC candles.
-    **Note:** The candle interval can be any minutes. 1,2,3.9....69.......143...uptp 375. Whoa!! Are you kidding me? :))
+    **Note:** 
 
     Args:
         stock_symbol (str): The stock symbol for which to retrieve data.
@@ -281,18 +281,20 @@ def get_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int = Non
     Returns:
         pandas.DataFrame or dict: A pandas DataFrame containing tick data or OHLC candles, or the raw JSON response if raw=True.
         Returns None in case of errors.
-
+    ## Notes:
+        - This functions fetches the tick data of the current day only.
+        - The candle interval can be any minutes. 1,2,3.7....69.......143...uptp 375. Whoa!! Are you kidding me? :))
     Example:
-        # Get raw tick data
+        - Get raw tick data
         >>> raw_data = get_intraday_tick_by_tick_data('INFY', raw=True)
 
-        # Get tick data as a DataFrame
+        - Get tick data as a DataFrame
         >>> tick_data_df = get_intraday_tick_by_tick_data('INFY')
 
-        # Get OHLC candles with 5-minute interval
+        - Get OHLC candles with 5-minute interval
         >>> ohlc_df = get_intraday_tick_by_tick_data('INFY', candle_interval=5)
 
-        # Get OHLC candles with a non-standard 143-minute interval.
+        - Get OHLC candles with a non-standard 143-minute interval.
         >>> unusual_ohlc_df = get_intraday_tick_by_tick_data('INFY', candle_interval=143)
     """
     try:

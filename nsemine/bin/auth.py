@@ -31,7 +31,6 @@ def initial_database_setup():
 def get_db_connection():
         try:
             db_path = Path(__file__).resolve().parent
-            print(os.path.join(db_path, 'nsedb.db'))
             conn = sqlite3.connect(os.path.join(db_path, 'nsedb.db'))
             return conn, conn.cursor()
         except Exception:

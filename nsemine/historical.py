@@ -43,8 +43,8 @@ def get_stock_historical_data(stock_symbol: str,
         params = {
         "exch":"N",
         "tradingSymbol":f"{stock_symbol}-EQ",
-        "fromDate":int(start_datetime.timestamp()),
-        "toDate":int(end_datetime.timestamp()) + timedelta(hours=5, minutes=30).seconds,
+        "fromDate":int(start_datetime.replace(hour=9, minute=15).timestamp()),
+        "toDate":int(end_datetime.timestamp()) + timedelta(hours=5, minutes=30, seconds=10).seconds,
         "chartStart":0
         }
         if interval in ('D', 'W', 'M'):
@@ -62,7 +62,11 @@ def get_stock_historical_data(stock_symbol: str,
             return 
         del raw_data['s']
         df =  pd.DataFrame(raw_data)
-        return utils.process_chart_response(df=df, start_datetime=start_datetime, interval=interval)
+        processed_df =  utils.process_chart_response(df=df, start_datetime=start_datetime, interval=interval)
+        if processed_df.iloc[-1]['volume'] < processed_df['volume'].quantile(.25):
+            processed_df.drop(processed_df.tail(1).index, inplace=True)
+        return processed_df
+
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()

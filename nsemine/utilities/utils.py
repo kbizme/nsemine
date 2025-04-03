@@ -81,27 +81,6 @@ def process_stock_quote_data(quote_data: dict) -> dict:
         return quote_data
 
 
-
-
-def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's') -> pd.DataFrame:
-    try:
-        if not isinstance(df, pd.DataFrame):
-            return df
-        if not pd.api.types.is_datetime64_dtype(df['datetime']):
-            df['datetime'] = pd.to_datetime(df['datetime'], unit=unit)
-        
-        df['time'] = df['datetime'].dt.time
-        start_time_obj = pd.to_datetime("09:14:59").time() 
-        end_time_obj = pd.to_datetime("15:30:00").time()
-        filtered_df = df[(df['time'] > start_time_obj) & (df['time'] < end_time_obj)]
-        return filtered_df.drop('time', axis=1)
-    except Exception as e:
-        print(f"Error occurred while removing pre and post market prices: {e}")
-        return df
-
-
-
-
 def convert_ticks_to_ohlc(data: pd.DataFrame, interval: int, require_validation: bool = False):
     try:
         if not isinstance(data,pd.DataFrame):
@@ -133,18 +112,41 @@ def convert_ticks_to_ohlc(data: pd.DataFrame, interval: int, require_validation:
         return data
 
 
-def remove_post_market_anomalies(df: pd.DataFrame) -> pd.DataFrame:
+# def is_post_market_anomaly(row):
+#             post_market_time = time_obj(hour=15, minute=29)
+#             if row['datetime'].time() >= post_market_time:
+#                 print('last file') # and row['open'] == row['high'] == row['low'] == row['close']:
+#                 return True
+#             return False
+
+
+# def remove_post_market_anomalies(df: pd.DataFrame) -> pd.DataFrame:
+#     try:
+#         anomalous_rows = df[df.apply(is_post_market_anomaly, axis=1)].index
+#         print('anomalous_rows', anomalous_rows)
+#         df.drop(anomalous_rows, inplace=True)
+#         # print(anomalous_rows)
+#         return df
+#     except Exception:
+#         return df
+    
+
+def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's') -> pd.DataFrame:
     try:
-        post_market_time = time_obj(hour=15, minute=29)
-        def is_post_market_anomaly(row):
-            if row['datetime'].time() >= post_market_time and row['open'] == row['high'] == row['low'] == row['close']:
-                return True
-            return False
-        anomalous_rows = df[df.apply(is_post_market_anomaly, axis=1)].index
-        df.drop(anomalous_rows, inplace=True)
+        if not isinstance(df, pd.DataFrame):
+            return df
+        if not pd.api.types.is_datetime64_dtype(df['datetime']):
+            df['datetime'] = pd.to_datetime(df['datetime'], unit=unit)
+        
+        df['time'] = df['datetime'].dt.time
+        start_time_obj = pd.to_datetime("09:14:59").time() 
+        end_time_obj = pd.to_datetime("15:29:59").time()
+        filtered_df = df[(df['time'] > start_time_obj) & (df['time'] < end_time_obj)]
+        return filtered_df.drop('time', axis=1)
+    except Exception as e:
+        print(f"Error occurred while removing pre and post market prices: {e}")
         return df
-    except Exception:
-        return df
+
 
 
 def process_chart_response(df: pd.DataFrame, start_datetime: datetime, interval: str) -> pd.DataFrame:
@@ -161,8 +163,6 @@ def process_chart_response(df: pd.DataFrame, start_datetime: datetime, interval:
         df['datetime'] = pd.to_datetime(df['datetime'], unit='s')
         df = remove_pre_and_post_market_prices_from_df(df=df)
         df['datetime'] = df['datetime'].apply(lambda dt: dt.replace(second=0, microsecond=0) + timedelta(minutes=1) if dt.second > 1 else dt.replace(second=0, microsecond=0))
-        # anomaly detection
-        df = remove_post_market_anomalies(df)        
         return df.reset_index(drop=True)
     except Exception:
         return df

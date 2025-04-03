@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 
 
-def initial_database_setup():
+def initialize_database():
     try:
         db_path = Path(__file__).resolve().parent
         conn = sqlite3.connect(database=os.path.join(db_path, 'nsedb.db'))
@@ -80,3 +80,6 @@ def get_session_token():
         if conn:
             conn.close()
         return None
+
+# database initialization
+initialize_database()

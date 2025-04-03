@@ -17,7 +17,7 @@ first_boy = 'https://www.nseindia.com/get-quotes/equity?symbol=RELIANCE'
 market_status = 'https://www.nseindia.com/api/marketStatus'
 holiday_list = 'https://www.nseindia.com/api/holiday-master?type=trading'
 
-nse_chart = 'https://charting.nseindia.com/Charts/ChartData/'
+nse_chart = 'https://charting.nseindia.com//Charts/ChartData/'
 nse_chart_symbol = 'https://charting.nseindia.com//Charts/symbolhistoricaldata/'
 nse_all_stocks_live = 'https://www.nseindia.com/api/live-analysis-stocksTraded'
 al_indices = 'https://www.nseindia.com/api/allIndices'

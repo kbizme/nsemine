@@ -2,7 +2,7 @@ from nsemine.bin import scraper
 from nsemine.utilities import urls, utils
 from nsemine.utilities.tokens import index_tokens
 from typing import Union
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import traceback
 
@@ -31,6 +31,7 @@ def get_stock_historical_data(stock_symbol: str,
 
     Notes:
         - You can try other unsual intervals like 7, 18, 50, 143 minutes, etc than those commonly used intervals.
+        - By Default, NSE provides data delayed by 1 minutes. so, when using this functions (or any other live functions) an one minute delay is expected.
     Example:
         - To get the daily interval data.
         >>> df = get_stock_historical_data('TCS', datetime(2025, 1, 1), datetime.now(), interval='D')
@@ -43,11 +44,11 @@ def get_stock_historical_data(stock_symbol: str,
         "exch":"N",
         "tradingSymbol":f"{stock_symbol}-EQ",
         "fromDate":int(start_datetime.timestamp()),
-        "toDate":int(end_datetime.timestamp()),
+        "toDate":int(end_datetime.timestamp()) + timedelta(hours=5, minutes=30).seconds,
         "chartStart":0
         }
         if interval in ('D', 'W', 'M'):
-            params.update({'timeInterval': 1, 'chartPeriod': interval})
+            params.update({'timeInterval': 1, 'chartPeriod': str(interval)})
         else:
             params.update({'timeInterval': int(interval), 'chartPeriod': 'I'})
 
@@ -93,6 +94,8 @@ def get_index_historical_data(index: str,
 
     Notes:
         - You can try other unsual intervals like 7, 18, 50, 143 minutes, etc than those commonly used intervals.
+        - By Default, NSE provides data delayed by 1 minutes. so, when using this functions (or any other live functions) an one minute delay is expected.
+
     Example:
         - To get the daily interval data.
         >>> df = get_index_historical_data('NIFTY 50', datetime(2025, 1, 1), datetime.now(), interval='D')
@@ -110,7 +113,7 @@ def get_index_historical_data(index: str,
             "scripCode":token,
             "ulToken":token,
             "fromDate":int(start_datetime.timestamp()),
-            "toDate":int(end_datetime.timestamp()),
+            "toDate":int(end_datetime.timestamp()) + timedelta(hours=5, minutes=30).seconds,
             "chartStart":0
         }
         if interval in ('D', 'W', 'M'):

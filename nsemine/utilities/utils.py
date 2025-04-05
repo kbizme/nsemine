@@ -133,6 +133,7 @@ def convert_ticks_to_ohlc(data: pd.DataFrame, interval: int, require_validation:
 
 def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's') -> pd.DataFrame:
     try:
+        df = df.copy()
         if not isinstance(df, pd.DataFrame):
             return df
         if not pd.api.types.is_datetime64_dtype(df['datetime']):

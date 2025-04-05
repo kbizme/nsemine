@@ -24,6 +24,7 @@ al_indices = 'https://www.nseindia.com/api/allIndices'
 nse_equity_quote = 'https://www.nseindia.com/api/quote-equity?symbol={}'
 nse_equity_index = 'https://www.nseindia.com/api/equity-stockIndices'
 ticks_chart = 'https://www.nseindia.com/api/chart-databyindex-dynamic?index={}EQN&type=symbol'
+underlying = 'https://www.nseindia.com/api/underlying-information'
 
 # SECURITIES ANALYSIS
 new_year_high = 'https://www.nseindia.com/api/live-analysis-data-52weekhighstock'

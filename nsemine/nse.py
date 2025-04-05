@@ -122,6 +122,31 @@ def get_all_equities_list(raw: bool = False):
         traceback.print_exc()
 
 
+def get_fno_stocks_lists(raw: bool = False):
+    """
+    This functions fetches all the fno equity list at the NSE Exchange.
+    Args:
+        raw (bool): Pass True, if you need the raw data without processing.
+    Returns:
+        df (DataFrame) : Pandas DataFrame containing all the nse equity list.
+
+        Returns None, if any error occurred.
+    """
+    try:
+        resp = scraper.get_request(url=urls.underlying)
+        data = resp.json()
+        if raw:
+            return data
+        
+        df = pd.DataFrame(data['data']['UnderlyingList'])
+        df = df[['underlying', 'symbol']]
+        df.columns = ['name', 'symbol']
+        return df    
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        
+
 
 def get_pre_open_data(key: str = 'NIFTY', raw: bool = False):
     """

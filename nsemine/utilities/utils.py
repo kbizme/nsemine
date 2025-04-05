@@ -152,6 +152,7 @@ def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's')
 
 def process_chart_response(df: pd.DataFrame, start_datetime: datetime, interval: str) -> pd.DataFrame:
     try:
+        df = df.copy()
         df = df[df['t'] >= int(start_datetime.timestamp())]
         df.columns = ['datetime', 'open', 'high', 'low', 'close', 'volume']
 
@@ -160,7 +161,7 @@ def process_chart_response(df: pd.DataFrame, start_datetime: datetime, interval:
             return df
         
         time_offset = timedelta(minutes=int(interval) - 1, seconds=59)
-        df['datetime'] = df['datetime'] - time_offset.seconds
+        df.loc[:, 'datetime'] = df['datetime'] - time_offset.seconds
         df['datetime'] = pd.to_datetime(df['datetime'], unit='s')
         df = remove_pre_and_post_market_prices_from_df(df=df)
         df['datetime'] = df['datetime'].apply(lambda dt: dt.replace(second=0, microsecond=0) + timedelta(minutes=1) if dt.second > 1 else dt.replace(second=0, microsecond=0))

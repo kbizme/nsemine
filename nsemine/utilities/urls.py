@@ -37,6 +37,7 @@ nse_equity_list = 'https://archives.nseindia.com/content/equities/EQUITY_L.csv'
 
 ####### NiftyIndices #######
 nifty_index_maping = 'https://iislliveblob.niftyindices.com/assets/json/IndexMapping.json'
+index_watch = 'https://iislliveblob.niftyindices.com/jsonfiles/LiveIndicesWatch.json'
 live_index_watch_json = 'https://iislliveblob.niftyindices.com/jsonfiles/LiveIndicesWatch.json?{}&_='
 
 

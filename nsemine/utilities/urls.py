@@ -12,6 +12,7 @@ default_headers = {
 }
 
 ####### NSEIndia #######
+next_api_f = 'https://www.nseindia.com/api/NextApi/apiClient?functionName={}'
 first_boy = 'https://www.nseindia.com/get-quotes/equity?symbol=RELIANCE'
 
 market_status = 'https://www.nseindia.com/api/marketStatus'

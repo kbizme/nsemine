@@ -42,6 +42,27 @@ def get_market_status(market_name: str = None) -> Union[list[dict], bool, None]:
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
+
+
+
+def get_market_stats():
+    """
+    This function fetches the market stattistics data from the NSE Exchange.
+    The data includes number of year high or low stocks, circuit breaker stocks, positive or
+    negative stocks etc.
+
+    Returns:
+        data (dict or None) : The stats data in dictionary format. Returns None if any error occurred.
+    """
+    try:
+        data = scraper.get_request(url=urls.next_api_f.format('getMarketStatistics'))
+        if data:
+            return data.json()['data']
+        return None
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
     
 
 

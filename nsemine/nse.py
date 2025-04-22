@@ -57,7 +57,9 @@ def get_market_stats():
     try:
         data = scraper.get_request(url=urls.next_api_f.format('getMarketStatistics'))
         if data:
-            return data.json()['data']
+            data =  data.json()['data']
+            data['asOnDate'] = datetime.strptime(data['asOnDate'], '%d-%b-%Y %H:%M:%S')
+            return data
         return None
     except Exception as e:
         print(f'ERROR! - {e}\n')

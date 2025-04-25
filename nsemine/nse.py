@@ -1,8 +1,9 @@
 from nsemine.bin import scraper
-from nsemine.utilities import urls
+from nsemine.utilities import urls, utils
 from typing import Union
 import json
 import pandas as pd
+import numpy as np
 import traceback
 from io import StringIO
 from datetime import datetime
@@ -118,7 +119,7 @@ def get_all_indices_list() -> Union[pd.DataFrame, None]:
 
 
 
-def get_all_equities_list(raw: bool = False):
+def get_all_equities_list(raw: bool = False) -> Union[pd.DataFrame, None]:
     """
     This functions fetches all the available equity list at the NSE Exchange.
     Args:
@@ -145,7 +146,7 @@ def get_all_equities_list(raw: bool = False):
         traceback.print_exc()
 
 
-def get_fno_stocks_lists(raw: bool = False):
+def get_fno_stocks_lists(raw: bool = False) -> Union[pd.DataFrame, None]:
     """
     This functions fetches all the fno equity list at the NSE Exchange.
     Args:
@@ -171,7 +172,7 @@ def get_fno_stocks_lists(raw: bool = False):
         
 
 
-def get_pre_open_data(key: str = 'NIFTY', raw: bool = False):
+def get_pre_open_data(key: str = 'NIFTY', raw: bool = False) -> Union[pd.DataFrame, dict, None]:
     """
     Retrieves pre-open market data from the NSE India Website.
 
@@ -268,6 +269,7 @@ def get_securities_at_52_weeks_high(raw: bool = False, need_timestamp: bool = Fa
         return None
 
 
+
 def get_securities_at_52_weeks_low(raw: bool = False, need_timestamp: bool = False) -> Union[pd.DataFrame, tuple[pd.DataFrame, datetime], dict, None]:
     """
     Retrieves live data for securities hitting a 52-week Low from NSE India.
@@ -308,4 +310,141 @@ def get_securities_at_52_weeks_low(raw: bool = False, need_timestamp: bool = Fal
         traceback.print_exc()
         return None
 
+ 
+def get_securities_above_previous_close(raw: bool = False, need_timestamp: bool = False) -> Union[pd.DataFrame, tuple[pd.DataFrame, datetime], dict, None]:
+    """This functions returns the list of securities that currently trading at higher prices than yesterday.
+    
+    Args:
+        raw (bool, optional): If you want the raw api response, then pass this parameter as True. Defaults to False.
+        need_timestamp (bool): The timestamp of the data, If True then the return type is a tuple containing the processed DataFrame and the timestamp.
+                               If False (default), returns only the processed DataFrame.
+    Returns:
+        df (Union[DataFrame or tuple[DataFrame, datetime] or dict or None]):  Returns a pandas DataFrame or None if any error occurred.
+    """
+    try:
+        resp = scraper.get_request(url=urls.base_nse_api+urls.advance)
+        if not resp:
+            return
+        
+        data = resp.json()
+        if raw:
+            return data
+        # otherwise
+        df = pd.DataFrame(data=data['advance']['data'])
+        processed_df =  utils.process_aud(df=df)
+        
+        if need_timestamp:
+            timestamp = data.get('timestamp')
+            timestamp = datetime.strptime(timestamp, '%d-%b-%Y %H:%M:%S')
+            return processed_df, timestamp
 
+        return processed_df
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
+
+
+  
+def get_securities_below_previous_close(raw: bool = False, need_timestamp: bool = False) -> Union[pd.DataFrame, tuple[pd.DataFrame, datetime], dict, None]:
+    """This functions returns the list of securities that currently trading at lower prices than yesterday.
+    
+    Args:
+        raw (bool, optional): If you want the raw api response, then pass this parameter as True. Defaults to False.
+        need_timestamp (bool): The timestamp of the data, If True then the return type is a tuple containing the processed DataFrame and the timestamp.
+                               If False (default), returns only the processed DataFrame.
+                               
+    Returns:
+        df (Union[DataFrame or tuple[DataFrame, datetime] or dict or None]): Returns a pandas DataFrame or None if any error occurred.
+    """
+    try:
+        resp = scraper.get_request(url=urls.base_nse_api+urls.decline)
+        if not resp:
+            return
+        
+        data = resp.json()
+        if raw:
+            return data
+        # otherwise
+        df = pd.DataFrame(data=data['decline']['data'])
+        processed_df =  utils.process_aud(df)
+        if need_timestamp:
+            timestamp = data.get('timestamp')
+            timestamp = datetime.strptime(timestamp, '%d-%b-%Y %H:%M:%S')
+            return processed_df, timestamp
+
+        return processed_df
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
+
+
+ 
+    
+def get_securities_same_as_previous_close(raw: bool = False, need_timestamp: bool = False) -> Union[pd.DataFrame, tuple[pd.DataFrame, datetime], dict, None]:
+    """This functions returns the list of securities that currently trading at the same prices as yesterday.
+    
+    Args:
+        raw (bool, optional): If you want the raw api response, then pass this parameter as True. Defaults to False.
+        need_timestamp (bool): The timestamp of the data, If True then the return type is a tuple containing the processed DataFrame and the timestamp.
+                               If False (default), returns only the processed DataFrame.
+                               
+    Returns:
+        df (Union[pd.DataFrame, tuple[pd.DataFrame, datetime], dict, None]): Returns a pandas DataFrame or None if any error occurred.
+    """
+    try:
+        resp = scraper.get_request(url=urls.base_nse_api+urls.unchanged)
+        if not resp:
+            return
+        
+        data = resp.json()
+        if raw:
+            return data
+        # otherwise
+        df = pd.DataFrame(data=data['Unchange']['data'])
+        processed_df =  utils.process_aud(df)
+        if need_timestamp:
+            timestamp = data.get('timestamp')
+            timestamp = datetime.strptime(timestamp, '%d-%b-%Y %H:%M:%S')
+            return processed_df, timestamp
+
+        return processed_df
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
+
+ 
+    
+def get_most_liquid_stocks(raw: bool = False):
+    """This function fetches the top 20 stocks with the most volume at NSE Exchange.
+    
+    Args:
+        raw (bool, optional): Pass this parameter as True if you want the raw response. Defaults to False.
+    
+    Returns:
+        df (DataFrame or None): Returns a Pandas DataFrame, or None if any error occurs.
+    """
+    try:
+        resp = scraper.get_request(urls.base_nse_api+urls.most_active)
+        if not resp:
+            return
+        data = resp.json()
+        if raw:
+            return data
+        # otherwise.
+        df = pd.DataFrame(data.get('data'))
+        
+        df = df[['lastUpdateTime', 'symbol', 'open', 'dayHigh', 'dayLow', 'lastPrice', 'previousClose', 'change', 'pChange', 'totalTradedVolume', 'totalTradedValue', 'yearHigh', 'yearLow']]
+        df.rename(inplace=True, columns={'lastUpdateTime': 'datetime', 'dayHigh': 'high', 'dayLow': 'low', 'lastPrice': 'close', 'previousClose': 'previous_close',
+                                            'pChange': 'changepct', 'totalTradedVolume': 'volume', 'totalTradedValue': 'traded_value', 'yearHigh': 'year_high', 'yearLow': 'year_low'})
+        df['datetime'] = pd.to_datetime(df['datetime'], format='%d-%b-%Y %H:%M:%S')
+        df['change'] = np.round(df['change'], 2)
+        df['changepct'] = np.round(df['changepct'], 2)
+        return df
+    
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None

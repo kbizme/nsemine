@@ -1,4 +1,5 @@
 import traceback
+import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta, time as time_obj
 
@@ -111,60 +112,57 @@ def convert_ticks_to_ohlc(data: pd.DataFrame, interval: int, require_validation:
         traceback.print_exc()
         return data
 
-
-# def is_post_market_anomaly(row):
-#             post_market_time = time_obj(hour=15, minute=29)
-#             if row['datetime'].time() >= post_market_time:
-#                 print('last file') # and row['open'] == row['high'] == row['low'] == row['close']:
-#                 return True
-#             return False
-
-
-# def remove_post_market_anomalies(df: pd.DataFrame) -> pd.DataFrame:
-#     try:
-#         anomalous_rows = df[df.apply(is_post_market_anomaly, axis=1)].index
-#         print('anomalous_rows', anomalous_rows)
-#         df.drop(anomalous_rows, inplace=True)
-#         # print(anomalous_rows)
-#         return df
-#     except Exception:
-#         return df
     
-
-def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's') -> pd.DataFrame:
+def process_aud(df:pd.DataFrame) -> pd.DataFrame:
     try:
-        df = df.copy()
-        if not isinstance(df, pd.DataFrame):
-            return df
-        if not pd.api.types.is_datetime64_dtype(df['datetime']):
-            df['datetime'] = pd.to_datetime(df['datetime'], unit=unit)
-        
-        df['time'] = df['datetime'].dt.time
-        start_time_obj = pd.to_datetime("09:14:59").time() 
-        end_time_obj = pd.to_datetime("15:29:59").time()
-        filtered_df = df[(df['time'] > start_time_obj) & (df['time'] < end_time_obj)]
-        return filtered_df.drop('time', axis=1)
-    except Exception as e:
-        print(f"Error occurred while removing pre and post market prices: {e}")
+        df = df[['symbol', 'series', 'lastPrice', 'previousClose', 'change', 'pchange', 'totalTradedVolume', 'totalTradedValue', 'totalMarketCap']].copy()
+        df.rename(axis=1, inplace=True, mapper={'lastPrice':'close', 'previousClose': 'previous_close', 'pchange':'changepct', 'totalTradedVolume': 'volume', 'totalTradedValue': 'traded_value_cr','totalMarketCap': 'market_cap_cr'})
+        df['change'] = np.round(df['change'], 2)
+        df['changepct'] = np.round(df['changepct'], 2)
+        df['market_cap_cr'] = np.round(df['market_cap_cr'], 2)
+        df['traded_value_cr'] = np.round(df['traded_value_cr'], 2)
+        df['volume'] = np.int64(df['volume'] * 1_00000)
+        return df
+    except:
         return df
 
 
-
-def process_chart_response(df: pd.DataFrame, start_datetime: datetime, interval: str) -> pd.DataFrame:
+def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's', interval: int = 3) -> pd.DataFrame:
     try:
-        df = df.copy()
-        df = df[df['t'] >= int(start_datetime.timestamp())]
-        df.columns = ['datetime', 'open', 'high', 'low', 'close', 'volume']
+        if not isinstance(df, pd.DataFrame):
+            return df
+        if not pd.api.types.is_datetime64_dtype(df['datetime']):
+            df['temp_datetime'] = pd.to_datetime(df['datetime'], unit=unit)
+        else:
+            df['temp_datetime'] = df['datetime']
 
+        df['time'] = df['temp_datetime'].dt.time
+        start_time_obj = pd.to_datetime("09:15:00").time() 
+        end_time_obj = pd.to_datetime("15:30:03").time()
+        filtered_df = df[(df['time'] >= start_time_obj) & (df['time'] < end_time_obj)]
+        return filtered_df.drop(columns=['time', 'temp_datetime'], axis=1)
+    except Exception as e:
+        print(f"Error occurred while removing pre and post market prices: {e}")
+        return df 
+    
+
+
+def process_historical_chart_response(df: pd.DataFrame, interval: str) -> pd.DataFrame:
+    try:
+        df.columns = ['datetime', 'open', 'high', 'low', 'close', 'volume']
         if interval in ('D', 'W', 'M'):
             df['datetime'] = pd.to_datetime(df['datetime'], unit='s')
             return df
-        
+
+        df = remove_pre_and_post_market_prices_from_df(df=df.copy())
+
         time_offset = timedelta(minutes=int(interval) - 1, seconds=59)
-        df.loc[:, 'datetime'] = df['datetime'] - time_offset.seconds
+        df['datetime'] = df['datetime'] - time_offset.seconds
+    
         df['datetime'] = pd.to_datetime(df['datetime'], unit='s')
-        df = remove_pre_and_post_market_prices_from_df(df=df)
         df['datetime'] = df['datetime'].apply(lambda dt: dt.replace(second=0, microsecond=0) + timedelta(minutes=1) if dt.second > 1 else dt.replace(second=0, microsecond=0))
         return df.reset_index(drop=True)
-    except Exception:
+    except Exception as e:
+        print('Exception', e)
+        traceback.print_exc()
         return df

@@ -9,33 +9,33 @@ import traceback
 
 
 def get_stock_historical_data(stock_symbol: str, 
-                          start_datetime: datetime, 
-                          end_datetime: datetime = datetime.now(), 
-                          interval: Union[int, str] = 1, 
-                          raw: bool = False) -> Union[pd.DataFrame, dict, None]:
+                            start_datetime: datetime, 
+                            end_datetime: datetime = datetime.now(), 
+                            interval: Union[int, str] = 1, 
+                            raw: bool = False) -> Union[pd.DataFrame, dict, None]:
     """
     Fetches historical stock data for a given symbol within a specified datetime range for the given interval.
     The interval can be either in minutes or 'D' for Daily, 'W' for Weekly and 'M' for monthly interval data.
     
-
+    
     Args:
         symbol (str): The stock symbol (e.g., "TCS" etc).
         start_datetime (datetime.datetime): The start datetime for the historical data.
         end_datetime (datetime.datetime, optional): The end datetime for the historical data. Defaults to the current datetime.
         interval (int or str, optional) : The time interval of the historical data. Valid values are 1, 3, 5, 10, 15, 30, 60, 'D', 'W', and 'M'. Defaults to 1 minute.
         raw (bool, optional): If True, returns the raw data without processing. If False, returns processed data. Defaults to False.
-
+    
     Returns:
         data (Union[pd.DataFrame, dict, None]) : A Pandas DataFrame containing the historical stock data. If you pass raw=True,
         then you will get the data in dictionary format. Returns None If any error occurs during data fetching or processing.
-
+    
     Notes:
         - You can try other unsual intervals like 7, 18, 50, 143 minutes, etc than those commonly used intervals.
         - By Default, NSE provides data delayed by 1 minutes. so, when using this functions (or any other live functions) an one minute delay is expected.
     Example:
         - To get the daily interval data.
         >>> df = get_stock_historical_data('TCS', datetime(2025, 1, 1), datetime.now(), interval='D')
-
+    
         - To get 3-minute interval data.
         >>> df = get_stock_historical_data('INFY', datetime(2025, 1, 1), datetime.now(), interval=3)
     """
@@ -43,8 +43,8 @@ def get_stock_historical_data(stock_symbol: str,
         params = {
         "exch":"N",
         "tradingSymbol":f"{stock_symbol}-EQ",
-        "fromDate":int(start_datetime.replace(hour=9, minute=15).timestamp()),
-        "toDate":int(end_datetime.timestamp()) + timedelta(hours=5, minutes=30, seconds=10).seconds,
+        "fromDate":int(start_datetime.timestamp()),
+        "toDate":int(end_datetime.timestamp()) + timedelta(hours=5, minutes=30).seconds,
         "chartStart":0
         }
         if interval in ('D', 'W', 'M'):
@@ -62,16 +62,15 @@ def get_stock_historical_data(stock_symbol: str,
             return 
         del raw_data['s']
         df =  pd.DataFrame(raw_data)
-        processed_df =  utils.process_chart_response(df=df, start_datetime=start_datetime, interval=interval)
+        processed_df =  utils.process_historical_chart_response(df=df, interval=interval)
         if processed_df.iloc[-1]['volume'] < processed_df['volume'].quantile(.25):
             processed_df.drop(processed_df.tail(1).index, inplace=True)
         return processed_df
-
+        
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
         return None
-    
 
 
 
@@ -124,6 +123,7 @@ def get_index_historical_data(index: str,
             params.update({'timeInterval': 1, 'chartPeriod': interval})
         else:
             params.update({'timeInterval': int(interval), 'chartPeriod': 'I'})
+            
         resp = scraper.get_request(url=urls.nse_chart_symbol, params=params)
         raw_data = resp.json()
         if raw:
@@ -133,7 +133,7 @@ def get_index_historical_data(index: str,
             return
         del raw_data['s']
         df =  pd.DataFrame(raw_data)
-        df = utils.process_chart_response(df=df, start_datetime=start_datetime, interval=interval)
+        df = utils.process_historical_chart_response(df=df, interval=interval)
         df.drop(columns=['volume'], inplace=True)  
         return df
     except Exception as e:

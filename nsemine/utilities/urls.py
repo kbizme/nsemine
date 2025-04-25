@@ -12,6 +12,13 @@ default_headers = {
 }
 
 ####### NSEIndia #######
+    
+most_active='live-analysis-most-active-securities?index=volume'
+advance = 'live-analysis-advance'
+decline = 'live-analysis-decline'
+unchanged = 'live-analysis-unchanged'
+    
+base_nse_api = 'https://www.nseindia.com/api/'
 next_api_f = 'https://www.nseindia.com/api/NextApi/apiClient?functionName={}'
 first_boy = 'https://www.nseindia.com/get-quotes/equity?symbol=RELIANCE'
 

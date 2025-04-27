@@ -222,6 +222,10 @@ def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = Fa
         df[['name', 'derivatives']] = [[item.get('companyName'), item.get('isFNOSec') ] for item in df['meta']]
         df = df[['symbol', 'name', 'series', 'derivatives', 'open', 'dayHigh', 'dayLow', 'lastPrice', 'previousClose', 'change', 'pChange', 'totalTradedVolume', 'yearHigh', 'yearLow']]
         df.columns = ['symbol', 'name', 'series', 'derivatives', 'open', 'high', 'low', 'close', 'previous_close', 'change', 'changepct', 'volume', 'year_high', 'year_low']
+        try:
+            df[['open', 'high', 'low', 'close', 'previous_close', 'year_high', 'year_low']] = df[['open', 'high', 'low', 'close', 'previous_close', 'year_high', 'year_low']].astype('float', errors='ignore')
+        except:
+            return df
         return df
     except Exception as e:
         print(f'ERROR! - {e}\n')

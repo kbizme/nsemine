@@ -147,7 +147,7 @@ def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's',
     
 
 
-def process_historical_chart_response(df: pd.DataFrame, interval: str) -> pd.DataFrame:
+def process_historical_chart_response(df: pd.DataFrame, interval: str, start_datetime: datetime, end_datetime: datetime) -> pd.DataFrame:
     try:
         df.columns = ['datetime', 'open', 'high', 'low', 'close', 'volume']
         if interval in ('D', 'W', 'M'):
@@ -161,6 +161,7 @@ def process_historical_chart_response(df: pd.DataFrame, interval: str) -> pd.Dat
     
         df['datetime'] = pd.to_datetime(df['datetime'], unit='s')
         df['datetime'] = df['datetime'].apply(lambda dt: dt.replace(second=0, microsecond=0) + timedelta(minutes=1) if dt.second > 1 else dt.replace(second=0, microsecond=0))
+        df = df[(df['datetime'] >= start_datetime) & (df['datetime'] <= end_datetime)]
         return df.reset_index(drop=True)
     except Exception as e:
         print('Exception', e)

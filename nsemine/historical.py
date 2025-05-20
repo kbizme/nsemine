@@ -48,7 +48,7 @@ def get_stock_historical_data(stock_symbol: str,
         "chartStart":0
         }
         if interval in ('D', 'W', 'M'):
-            params.update({'timeInterval': 1, 'chartPeriod': str(interval)})
+            params.update({'timeInterval': 1, 'chartPeriod': str(interval), 'fromDate': int(start_datetime.timestamp()) - timedelta(hours=5, minutes=30).seconds})
         else:
             params.update({'timeInterval': int(interval), 'chartPeriod': 'I'})
 
@@ -62,7 +62,10 @@ def get_stock_historical_data(stock_symbol: str,
             return 
         del raw_data['s']
         df =  pd.DataFrame(raw_data)
-        processed_df =  utils.process_historical_chart_response(df=df, interval=interval)
+        processed_df =  utils.process_historical_chart_response(df=df, interval=interval, start_datetime=start_datetime, end_datetime=end_datetime)
+        if interval in ('D', 'W', 'M'):
+            return processed_df
+    
         if processed_df.iloc[-1]['volume'] < processed_df['volume'].quantile(.25):
             processed_df.drop(processed_df.tail(1).index, inplace=True)
         return processed_df
@@ -120,7 +123,7 @@ def get_index_historical_data(index: str,
             "chartStart":0
         }
         if interval in ('D', 'W', 'M'):
-            params.update({'timeInterval': 1, 'chartPeriod': interval})
+            params.update({'timeInterval': 1, 'chartPeriod': interval, 'fromDate': int(start_datetime.timestamp()) - timedelta(hours=5, minutes=30).seconds})
         else:
             params.update({'timeInterval': int(interval), 'chartPeriod': 'I'})
             
@@ -133,7 +136,7 @@ def get_index_historical_data(index: str,
             return
         del raw_data['s']
         df =  pd.DataFrame(raw_data)
-        df = utils.process_historical_chart_response(df=df, interval=interval)
+        df = utils.process_historical_chart_response(df=df, interval=interval, start_datetime=start_datetime, end_datetime=end_datetime)
         df.drop(columns=['volume'], inplace=True)  
         return df
     except Exception as e:

@@ -76,7 +76,7 @@ def get_index_live_price(index: str = 'NIFTY 50', raw: bool = False):
             'year_low': data.get('yearLow')
         }
         try:
-            index_data['datetime'] = datetime.strptime(data.get('lastUpdateTime'), '%d-%b-%Y %H:%M:%S'),
+            index_data['datetime'] = datetime.strptime(data.get('lastUpdateTime'), '%d-%b-%Y %H:%M:%S')
         except:
             pass
         return index_data

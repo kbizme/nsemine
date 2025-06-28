@@ -448,3 +448,123 @@ def get_most_liquid_stocks(raw: bool = False):
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
         return None
+
+
+
+def get_most_value_traded_stocks(raw: bool = False):
+    """This function fetches the top 20 stocks with the most traded value at NSE Exchange.
+    
+    Args:
+        raw (bool, optional): Pass this parameter as True if you want the raw response. Defaults to False.
+    
+    Returns:
+        df (DataFrame or None): Returns a Pandas DataFrame, or None if any error occurs.
+    """
+    try:
+        resp = scraper.get_request(urls.base_nse_api+urls.most_valued)
+        if not resp:
+            return
+        data = resp.json()
+        if raw:
+            return data
+        # otherwise.
+        df = pd.DataFrame(data.get('data'))
+        
+        df = df[['lastUpdateTime', 'symbol', 'open', 'dayHigh', 'dayLow', 'lastPrice', 'previousClose', 'change', 'pChange', 'totalTradedVolume', 'totalTradedValue', 'yearHigh', 'yearLow']]
+        df.rename(inplace=True, columns={'lastUpdateTime': 'datetime', 'dayHigh': 'high', 'dayLow': 'low', 'lastPrice': 'close', 'previousClose': 'previous_close',
+                                            'pChange': 'changepct', 'totalTradedVolume': 'volume', 'totalTradedValue': 'traded_value', 'yearHigh': 'year_high', 'yearLow': 'year_low'})
+        df['datetime'] = pd.to_datetime(df['datetime'], format='%d-%b-%Y %H:%M:%S')
+        df['change'] = np.round(df['change'], 2)
+        df['changepct'] = np.round(df['changepct'], 2)
+        return df
+    
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
+
+
+
+def get_todays_gainers(key: str = 'ALL', raw: bool = False):
+    """ This function returns the gainers stocks of today's trading session.
+    
+    Args:
+        key (str): This defines the type of the gainers, i.e. Nifty, Bank Nifty, FNO Securities etc. Defaults to ALL.
+                    The other possible values includes ALL, NIFTY, NIFTYNEXT50, BANKNIFTY, FNO, GT20 (Securities greater than 20) & LT20 (Securities less than 20).
+        raw (bool, optional): Pass this parameter as True if you want the raw response. Defaults to False.
+    
+    Returns:
+        df (DataFrame or None): Returns a Pandas DataFrame, or None if any error occurs.
+    
+    """
+    try:
+        resp = scraper.get_request(url=urls.base_nse_api+urls.all_gainers)
+        if not resp:
+            return
+        data = resp.json()
+        if raw:
+            return data
+        # otherwise
+        key_mapper = {
+            'ALL': 'allSec',
+            'NIFTY': 'NIFTY',
+            'BANKNIFTY': 'BANKNIFTY',
+            'FNO': 'FOSec',
+            'NIFTYNEXT50': 'NIFTYNEXT50',
+            'NIFTYNXT50': 'NIFTYNEXT50',
+            'GT20': 'SecGtr20',
+            'LT20': 'SecLwr20'
+        }
+        key = key_mapper.get(key.upper())
+        data = data.get(key)
+        # data processing
+        return utils.process_movers_data(data=data) 
+   
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
+
+
+
+def get_todays_losers(key: str = 'ALL', raw: bool = False):
+    """ This function returns the losers stocks of today's trading session.
+    
+    Args:
+        key (str): This defines the type of the losers, i.e. Nifty, Bank Nifty, FNO Securities etc. Defaults to ALL.
+                    The other possible values includes ALL, NIFTY, NIFTYNEXT50, BANKNIFTY, FNO, GT20 (Securities greater than 20) & LT20 (Securities less than 20).
+        raw (bool, optional): Pass this parameter as True if you want the raw response. Defaults to False.
+    
+    Returns:
+        df (DataFrame or None): Returns a Pandas DataFrame, or None if any error occurs.
+    
+    """
+    try:
+        resp = scraper.get_request(url=urls.base_nse_api+urls.all_losers)
+        if not resp:
+            return
+        data = resp.json()
+        if raw:
+            return data
+        # otherwise
+        key_mapper = {
+            'ALL': 'allSec',
+            'NIFTY': 'NIFTY',
+            'BANKNIFTY': 'BANKNIFTY',
+            'FNO': 'FOSec',
+            'NIFTYNEXT50': 'NIFTYNEXT50',
+            'NIFTYNXT50': 'NIFTYNEXT50',
+            'GT20': 'SecGtr20',
+            'LT20': 'SecLwr20'
+        }
+        key = key_mapper.get(key.upper())
+        data = data.get(key)
+        # data processing
+        return utils.process_movers_data(data=data) 
+   
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
+    
+    

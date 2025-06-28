@@ -167,3 +167,19 @@ def process_historical_chart_response(df: pd.DataFrame, interval: str, start_dat
         print('Exception', e)
         traceback.print_exc()
         return df
+
+
+def process_movers_data(data):
+    try:
+        df = pd.DataFrame(data['data'])
+        df['change'] = round(df['ltp'] - df['prev_price'], 2)
+        df = df[['symbol', 'series', 'open_price', 'high_price', 'low_price', 'ltp', 
+                'prev_price', 'change', 'perChange', 'trade_quantity', 'turnover']]
+        df.rename(columns={'open_price': 'open', 'high_price': 'high', 'low_price': 'low', 'ltp': 'close',
+                        'prev_price': 'previous_close', 'perChange': 'changepct', 'trade_quantity': 'volume'}, inplace=True)
+        df['turnover'] = round(df['turnover'] * 1_00_000, 2)
+        return df
+    except:
+        return data
+    
+    

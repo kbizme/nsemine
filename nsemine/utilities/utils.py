@@ -56,6 +56,8 @@ def process_stock_quote_data(quote_data: dict) -> dict:
 
             close = _price_info.get('close')
             last_price = _price_info.get('lastPrice')
+            if not close:
+                close = last_price
             previous_close = _price_info.get('previousClose')
             change = round(_price_info.get('change') or 0, 2)
             change_percentage = round(_price_info.get('pChange') or 0, 2)

@@ -439,7 +439,12 @@ def get_most_liquid_stocks(raw: bool = False):
         df = df[['lastUpdateTime', 'symbol', 'open', 'dayHigh', 'dayLow', 'lastPrice', 'previousClose', 'change', 'pChange', 'totalTradedVolume', 'totalTradedValue', 'yearHigh', 'yearLow']]
         df.rename(inplace=True, columns={'lastUpdateTime': 'datetime', 'dayHigh': 'high', 'dayLow': 'low', 'lastPrice': 'close', 'previousClose': 'previous_close',
                                             'pChange': 'changepct', 'totalTradedVolume': 'volume', 'totalTradedValue': 'traded_value', 'yearHigh': 'year_high', 'yearLow': 'year_low'})
-        df['datetime'] = pd.to_datetime(df['datetime'], format='%d-%b-%Y %H:%M:%S')
+        
+        try:
+            df['datetime'] = pd.to_datetime(df['datetime'], format='%d-%b-%Y %H:%M:%S')
+        except:
+            df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d %H:%M:%S')
+
         df['change'] = np.round(df['change'], 2)
         df['changepct'] = np.round(df['changepct'], 2)
         return df
@@ -473,7 +478,12 @@ def get_most_value_traded_stocks(raw: bool = False):
         df = df[['lastUpdateTime', 'symbol', 'open', 'dayHigh', 'dayLow', 'lastPrice', 'previousClose', 'change', 'pChange', 'totalTradedVolume', 'totalTradedValue', 'yearHigh', 'yearLow']]
         df.rename(inplace=True, columns={'lastUpdateTime': 'datetime', 'dayHigh': 'high', 'dayLow': 'low', 'lastPrice': 'close', 'previousClose': 'previous_close',
                                             'pChange': 'changepct', 'totalTradedVolume': 'volume', 'totalTradedValue': 'traded_value', 'yearHigh': 'year_high', 'yearLow': 'year_low'})
-        df['datetime'] = pd.to_datetime(df['datetime'], format='%d-%b-%Y %H:%M:%S')
+        
+        try:
+            df['datetime'] = pd.to_datetime(df['datetime'], format='%d-%b-%Y %H:%M:%S')
+        except:
+            df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d %H:%M:%S')
+                
         df['change'] = np.round(df['change'], 2)
         df['changepct'] = np.round(df['changepct'], 2)
         return df

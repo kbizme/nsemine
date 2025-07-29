@@ -180,7 +180,7 @@ def get_all_securities_live_snapshot(series: Union[str,list] = None, raw: bool =
 
 
 
-def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = False):
+def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = False, stats: bool = False):
     """
     Retrieves live snapshot data of constituents for a specified stock market index from the NSE (National Stock Exchange of India).
 
@@ -190,9 +190,10 @@ def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = Fa
     Args:
         index (str, optional): The name of the index for which to retrieve constituent data. Defaults to 'NIFTY 50'.
         raw (bool, optional): If True, returns the raw JSON response from the API. If False, returns a processed Pandas DataFrame. Defaults to False.
+        stats (bool, optional): If True, returns the timestamp, count of total, advances, declines, and unchanged constituents along with the processed DataFrame. Defaults to False.
 
     Returns:
-        data : Union[pandas.DataFrame or dict or None]: 
+        data : Union[pandas.DataFrame or tuple[pandas.DataFrame, dict] or dict or None]: 
             - If raw is False, returns a Pandas DataFrame containing the constituent data with columns:
               'symbol', 'name', 'series', 'derivatives', 'open', 'high', 'low', 'close', 'previous_close', 
               'change', 'changepct', 'volume', 'year_high', 'year_low'.
@@ -216,6 +217,7 @@ def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = Fa
         
         # otherwise,
         data = resp.json()
+        index_stats = data['advance'], data['timestamp']
         data = data['data']
         del data[0]
         df = pd.DataFrame(data)
@@ -225,8 +227,30 @@ def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = Fa
         try:
             df[['open', 'high', 'low', 'close', 'previous_close', 'year_high', 'year_low']] = df[['open', 'high', 'low', 'close', 'previous_close', 'year_high', 'year_low']].astype('float', errors='ignore')
         except:
+            pass
+        if not stats:
             return df
-        return df
+        # otherwise
+        advances = 0
+        declines = 0
+        unchanged = 0
+        timestamp = None
+        try:
+            advances = int(index_stats[0].get('advances'))
+            declines = int(index_stats[0].get('declines'))
+            unchanged = int(index_stats[0].get('unchanged'))
+            timestamp = datetime.strptime(index_stats[1], '%d-%b-%Y %H:%M:%S')
+        except:
+            print('Warning: Exceptions Occurred While Processing Index Stats Data.')
+                    
+        stats_data = {
+            'total': len(df),
+            'advances': advances,
+            'declines': declines,
+            'unchanged': unchanged,
+            'datetime': timestamp
+        }
+        return df, stats_data
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()

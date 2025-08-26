@@ -14,9 +14,10 @@ def get_request(url: str, headers: dict = None, params: dict = None) -> Union[re
         session = requests.Session()
         session_token = auth.get_session_token()
         if not session_token:
-                session.get(url=urls.first_boy, headers=urls.default_headers, timeout=15)
-                session_token = session.cookies.get_dict()
-                auth.set_session_token(session_token)
+            page_header = urls.get_nse_headers(profile='page')
+            session.get(url=urls.first_boy, headers=page_header, timeout=15)
+            session_token = session.cookies.get_dict()
+            auth.set_session_token(session_token)
         for retry_count in range(3):
             sleep_time = 2**retry_count+time.time()%1
             try:

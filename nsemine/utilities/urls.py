@@ -53,20 +53,42 @@ live_index_watch_json = 'https://iislliveblob.niftyindices.com/jsonfiles/LiveInd
 
 
 ####### NIFTY HEADERS #######
-def get_nse_headers():
+def get_nse_headers(profile: str = "api"):
+    """
+    Returns randomized headers for NSE requests.
+
+    Args:
+        profile (str): "page" → For HTML pages like first_boy
+                       "api"  → For JSON/XHR API endpoints
+
+    Returns:
+        dict: Headers dictionary ready for requests
+    """
+
+    # User-Agent options with platform
     user_agents = [
-        ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0", '"Windows"'),
-        ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36", '"Windows"'),
-        ("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0", '"Windows"'),
-        ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15", '"macOS"'),
-        ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36", '"macOS"'),
-        ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36", '"Linux"'),
-        ("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0", '"Linux"'),
-        ("Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko", '"Windows"'),
-        ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Brave Chrome/129.0.0.0 Safari/537.36", '"Windows"'),
-        ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Version/16.0 Safari/537.36", '"macOS"'),
+        # Windows
+        ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+         "(KHTML, like Gecko) Chrome/139.0 Safari/537.36 OPR/120", "Windows"),
+        ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+         "(KHTML, like Gecko) Chrome/139.0 Safari/537.36 Edg/139", "Windows"),
+        ("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0", "Windows"),
+
+        # macOS
+        ("Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/605.1.15 "
+         "(KHTML, like Gecko) Version/17.0 Safari/605.1.15", "macOS"),
+        ("Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/537.36 "
+         "(KHTML, like Gecko) Chrome/139.0 Safari/537.36 Edg/139", "macOS"),
+        ("Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/537.36 "
+         "(KHTML, like Gecko) Chrome/139.0 Safari/537.36 Vivaldi/7.5", "macOS"),
+
+        # Linux
+        ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+         "(KHTML, like Gecko) Chrome/139.0 Safari/537.36", "Linux"),
+        ("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:141.0) Gecko/20100101 Firefox/141.0", "Linux"),
     ]
 
+    # Accept-Language options
     accept_languages = [
         "en-US,en;q=0.9",
         "en-GB,en;q=0.9",
@@ -74,25 +96,45 @@ def get_nse_headers():
         "en;q=0.9,fr;q=0.8,de;q=0.7,ro;q=0.6",
     ]
 
+    # Accept header options for API
+    accept_api = [
+        "application/json, text/javascript, */*; q=0.01",
+        "application/json, */*; q=0.01",
+        "application/json, text/plain, */*; q=0.01"
+    ]
+
+    # Pick random User-Agent and platform
     user_agent, platform = choice(user_agents)
 
+    # Determine sec-ch-ua based on browser type in User-Agent
+    if "Edg" in user_agent:
+        sec_ch_ua = '"Chromium";v="139", "Not.A/Brand";v="8", "Microsoft Edge";v="139"'
+    elif "OPR" in user_agent or "Vivaldi" in user_agent:
+        sec_ch_ua = '"Chromium";v="139", "Not.A/Brand";v="8", "Opera";v="120"'
+    elif "Firefox" in user_agent:
+        sec_ch_ua = '"Mozilla Firefox";v="141"'
+    else:  # Chrome fallback
+        sec_ch_ua = '"Chromium";v="139", "Not.A/Brand";v="8", "Chrome";v="139"'
+
+    # Base headers
     headers = {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/png,image/webp,*/*;q=0.8",
-        "Accept-language": choice(accept_languages),
-        'Accept-Encoding': 'gzip, deflate, br, zstd', 
+        "Accept-Language": choice(accept_languages),
+        "Accept-Encoding": "gzip, deflate, br, zstd",
         "Connection": "keep-alive",
         "Cache-Control": "max-age=0",
         "User-Agent": user_agent,
-        "sec-ch-ua": '"Chromium";v="129", "Not.A/Brand";v="8", "Microsoft Edge";v="129"',
+        "sec-ch-ua": sec_ch_ua,
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": platform,
-        "sec-fetch-dest": "document",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-site": "none",
-        "sec-fetch-user": "?1",
-        "upgrade-insecure-requests": "1",
+        "Referer": "https://www.nseindia.com/",
         "X-Requested-With": "XMLHttpRequest"
     }
-    if "Edge" not in user_agent:
-        headers["sec-ch-ua"] = '"Chromium";v="129", "Not.A/Brand";v="8", "Chrome";v="129"'
+
+    # Profile-specific headers
+    if profile == "page":
+        headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/png,image/webp,*/*;q=0.8"
+        headers["Upgrade-Insecure-Requests"] = "1"
+    else:  # "api"
+        headers["Accept"] = choice(accept_api)
+
     return headers

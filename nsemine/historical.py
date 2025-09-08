@@ -62,13 +62,7 @@ def get_stock_historical_data(stock_symbol: str,
             return 
         del raw_data['s']
         df =  pd.DataFrame(raw_data)
-        processed_df =  utils.process_historical_chart_response(df=df, interval=interval, start_datetime=start_datetime, end_datetime=end_datetime)
-        if interval in ('D', 'W', 'M'):
-            return processed_df
-    
-        if processed_df.iloc[-1]['volume'] < processed_df['volume'].quantile(.25):
-            processed_df.drop(processed_df.tail(1).index, inplace=True)
-        return processed_df
+        return utils.process_historical_chart_response(df=df, interval=interval, start_datetime=start_datetime, end_datetime=end_datetime)
         
     except Exception as e:
         print(f'ERROR! - {e}\n')

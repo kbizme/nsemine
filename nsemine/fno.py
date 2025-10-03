@@ -30,14 +30,18 @@ def get_oi_spurts(raw: bool = False, sentiment_analysis: bool = True) -> pd.Data
             return data
         
         df = pd.DataFrame(data['data'])
-        df = df[['symbol', 'underlyingValue', 'latestOI', 'prevOI', 'changeInOI', 'avgInOI', 'volume']]
+        df = df[['symbol', 'underlyingValue', 'latestOI', 'prevOI', 'changeInOI', 'avgInOI', 'volume', 'futValue']]
         df.rename(columns={
             'latestOI': 'latest_oi',
             'prevOI': 'previous_oi',
             'changeInOI': 'oi_change',
             'avgInOI': 'oi_changepct',
             'underlyingValue': 'ltp',
+            'futValue': 'turnover',
         }, inplace=True)
+        
+        # converting the turnover from lakh to absolute value
+        df['turnover'] = df['turnover'] * 100000
         
         if not sentiment_analysis:
             return df

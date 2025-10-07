@@ -188,7 +188,7 @@ def get_pre_open_data(key: str = 'NIFTY', raw: bool = False) -> Union[pd.DataFra
 
     Returns:
         df (pandas.DataFrame or dict or None):
-            - If raw is False, returns a pandas DataFrame with columns: ['datetime', 'symbol', 'iep', 'previous_close', 'change', 'changepct', 'quantity',
+            - If raw is False, returns a pandas DataFrame with columns: ['datetime', 'symbol', 'previous_close', 'close', 'change', 'changepct', 'volume',
               'turnover', 'market_cap', 'year_high', 'year_low'].
             - If raw is True, returns the raw JSON response (a dictionary).
             - Returns None if an error occurs during the API request or data processing.
@@ -220,8 +220,8 @@ def get_pre_open_data(key: str = 'NIFTY', raw: bool = False) -> Union[pd.DataFra
         df = pd.DataFrame(container)
         timestamp = fetched_data.get('timestamp')
         df['datetime'] = datetime.strptime(timestamp, '%d-%b-%Y %H:%M:%S')
-        df = df[['datetime', 'symbol', 'iep', 'previousClose', 'change', 'pChange', 'finalQuantity', 'totalTurnover', 'marketCap', 'yearHigh', 'yearLow']]
-        df.columns = ['datetime', 'symbol', 'iep', 'previous_close', 'change', 'changepct', 'quantity', 'turnover', 'market_cap', 'year_high', 'year_low']
+        df = df[['datetime', 'symbol', 'previousClose', 'iep', 'change', 'pChange', 'finalQuantity', 'totalTurnover', 'marketCap', 'yearHigh', 'yearLow']]
+        df.columns = ['datetime', 'symbol', 'previous_close', 'close', 'change', 'changepct', 'volume', 'turnover', 'market_cap', 'year_high', 'year_low']
         return df
     except Exception as e:
         print(f'ERROR! - {e}\n')

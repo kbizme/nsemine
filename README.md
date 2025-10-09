@@ -111,3 +111,17 @@ Contributions are welcome! Please feel free to submit pull requests or open issu
   
 
 _Work in progress..._ Meanwhile, you may explore the library. ReadTheDocs style documentation will be added upon complete library build.
+
+Basic Usage Example:
+`from nsemine import nse, live, historical, fno`
+
+1. get live stock and index quotes
+ - quotes = `live.get_stock_live_quotes(stock_symbol='TCS')`
+ - index_quote = `live.get_index_live_price(index='NIFTY 50')`
+
+2. You can download stock and index historical data from the `historical` module.
+3. NSE related any data is available on the `nse` module.
+4. FNO related data functions are available on `fno` module [in development].
+
+TIP:  You may get all the available function in each modules, by using a dot afte the module name, like this -> live.   or -> nse.   [Your IDE may highlight all the available functions, all functions contains comprehensive docstring]
+This is a workaround while the full documentation is ready.

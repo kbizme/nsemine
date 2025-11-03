@@ -25,22 +25,19 @@ def get_request(url: str, headers: dict = None, params: dict = None) -> Union[re
                 response.raise_for_status()
                 if response.status_code == 200:
                     return response
-                time.sleep(sleep_time)
             except requests.exceptions.Timeout as e:
                 print(f"Request timed out: {e}\nRetrying...")
-                time.sleep(sleep_time)
-                continue
             except requests.exceptions.ConnectionError as e:
                 print(f"Connection error: {e}\nRetrying...")
-                time.sleep(sleep_time)
-                continue
             except requests.exceptions.HTTPError as e:
                 print(f"HTTP error: {e}\nRetrying...")
-                time.sleep(sleep_time)
             except requests.exceptions.RequestException as e:
                 print(f"Error during request: {e}\nRetrying...")
-                time.sleep(sleep_time)
-                continue
+            except Exception as e:
+                print(f"Unexpected error: {e}\nRetrying...")
+            # taking a short nap
+            time.sleep(sleep_time)
+            
         print("Request failed after multiple retries.")
         return None
     except Exception as e:

@@ -40,8 +40,8 @@ def get_daily_bhavcopy_and_deliverables_data(series: str = None, trade_date: dat
         if trade_date:
             url = urls.historic_bhavcopy_cm.format(session_date=trade_date.strftime('%d-%b-%Y'))
         else:
-            url = urls.full_bhavcopy_cm
-            
+            url = urls.full_bhavcopy_cm.format(session_date=date.today().strftime('%d%m%Y'))
+
         resp = scraper.get_request(url=url)
         
         # processing the response

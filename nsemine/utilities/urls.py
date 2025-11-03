@@ -47,7 +47,7 @@ pre_open = 'https://www.nseindia.com/api/market-data-pre-open?key={}'
 nse_equity_list = 'https://archives.nseindia.com/content/equities/EQUITY_L.csv'
 
 # Archives
-full_bhavcopy_cm = 'https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_01102025.csv'
+full_bhavcopy_cm = 'https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{session_date}.csv' # 01102025
 historic_bhavcopy_cm = 'https://www.nseindia.com/api/reports?archives=%5B%7B%22name%22%3A%22Full%20Bhavcopy%20and%20Security%20Deliverable%20data%22%2C%22type%22%3A%22daily-reports%22%2C%22category%22%3A%22capital-market%22%2C%22section%22%3A%22equities%22%7D%5D&date={session_date}&type=equities&mode=single'
 
 ####### NiftyIndices #######

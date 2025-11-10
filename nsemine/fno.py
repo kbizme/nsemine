@@ -3,6 +3,8 @@ import traceback
 from nsemine.bin import scraper
 from nsemine import live
 from nsemine.utilities import urls
+from datetime import datetime
+
 
 
 
@@ -81,3 +83,51 @@ def get_oi_spurts(raw: bool = False, sentiment_analysis: bool = True) -> pd.Data
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
         return None
+
+
+
+
+def get_stock_option_details(symbol: str, 
+                             only_expiry: bool = False, 
+                             only_strikes: bool = False, 
+                             raw: bool = False) -> dict | list | None :
+    """
+    This function fetches stock option's expiry dates and strikes prices of the given stock symbol. 
+    It supports various modes to return only specific parts of the data.
+ 
+    Args:
+        symbol (str): The stock symbol (e.g., 'AUBANK', 'TCS').
+        only_expiry (bool, optional): If True, returns only a list of available expiry dates. Defaults to False.
+        only_strikes (bool, optional): If True, returns only a list of available strike prices. Defaults to False.
+        raw (bool, optional): If True, returns the raw JSON response from the NSE. Defaults to False.
+ 
+    Returns:
+        data (dict | list | None): A dictionary with expiry dates and strike prices, 
+            a list of expiry dates, a list of strike prices, the raw data,
+            or None if the request fails. The return type depends on the 
+            `only_expiry`, `only_strikes`, and `raw` parameters.
+ 
+    """
+    try:
+        resp = scraper.get_request(url=urls.stk_opt_url.format(symbol))
+        if not resp:
+            return
+        fetched_data = resp.json()
+        if raw:
+            return fetched_data
+ 
+        # waterfall processing    
+        expiry_dates = fetched_data['expiryDates']
+        expiry_dates = [datetime.strptime(item, '%d-%b-%Y').date() for item in expiry_dates]
+        if only_expiry:
+            return expiry_dates
+        
+        strike_prices = fetched_data['strikePrice']
+        strike_prices = [int(x) for x in strike_prices]
+        if only_strikes:
+            return strike_prices
+        return dict(expiry_dates=expiry_dates, strike_prices=strike_prices)
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+ 

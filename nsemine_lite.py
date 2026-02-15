@@ -1,7 +1,7 @@
 """
 *module*: `nsemine_lite.py` — An **All-Rounder** historical stock, index, future and options data downloader for NSE Exchange.\n
 *author*: **Kartick Bhowmik** \n
-*updated*: **28/01/2026 03:50** \n
+*updated*: **15/02/2026 21:10** \n
 """
 import os
 import json
@@ -116,7 +116,7 @@ def _refresh_cookie(session: requests.Session) -> dict:
 
 
 
-def _http_get(url: str, params: dict = None, headers: dict = None, max_retries: int = 3, timeout: int = 15):
+def _http_get(url: str, payload: dict = None, headers: dict = None, max_retries: int = 2, timeout: int = 15):
     """
     Lightweight GET wrapper with session, cookie refresh, retries.
     Returns the requests.Response object or None.
@@ -130,7 +130,7 @@ def _http_get(url: str, params: dict = None, headers: dict = None, max_retries: 
 
     for attempt in range(max_retries):
         try:
-            resp = session.get(url, headers=headers, params=params, timeout=timeout, cookies=session.cookies.get_dict())
+            resp = session.get(url, headers=headers, params=payload, timeout=timeout, cookies=session.cookies.get_dict())
             resp.raise_for_status()
             # if server returns a JSON with empty/blocked content, still returning the response for caller to decide
             return resp
@@ -148,7 +148,7 @@ def _http_get(url: str, params: dict = None, headers: dict = None, max_retries: 
 
 
 
-def _http_post(url: str, payload: dict = None, headers: dict = None, max_retries: int = 3, timeout: int = 15):
+def _http_post(url: str, payload: dict = None, headers: dict = None, max_retries: int = 2, timeout: int = 15):
     """
     Lightweight POST wrapper with session, cookie refresh, retries.
     Returns the requests.Response object or None.
@@ -267,9 +267,10 @@ def __fetch_historical_data(symbol: str,
             'token': token
         }
 
-        resp = _http_post(url=nse_chart_url, payload=payload, headers=default_headers)
+        resp = _http_get(url=nse_chart_url, payload=payload, headers=default_headers)
         if resp is None:
-            return None
+            resp = _http_post(url=nse_chart_url, payload=payload, headers=default_headers)
+            # return None
 
         try:
             raw_data = resp.json()
@@ -338,7 +339,10 @@ def get_script_token(symbol: str, segment: str | None = None, scrip_type: str | 
             'symbol': symbol
         }
 
-        resp = _http_post(url=search_token_url, payload=params)
+        resp = _http_get(url=search_token_url, payload=params)
+        if resp is None:
+            resp = _http_post(url=search_token_url, payload=params)
+            
         data = resp.json()
         df = pd.DataFrame(data['data'])
         if get_all:
@@ -360,6 +364,8 @@ def get_script_token(symbol: str, segment: str | None = None, scrip_type: str | 
         type = x.iloc[0]['type']
         return symbol, token, type
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f'Error: Could not find the token for the given symbol. {e}')
         return None
 

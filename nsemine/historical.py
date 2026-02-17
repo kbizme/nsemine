@@ -1,8 +1,6 @@
 from nsemine.bin import scraper
 from nsemine.utilities import urls, utils
-from nsemine.utilities.tokens import index_tokens
-from typing import Union
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
 import traceback
 
@@ -11,8 +9,8 @@ import traceback
 def get_stock_historical_data(stock_symbol: str, 
                             start_datetime: datetime, 
                             end_datetime: datetime = datetime.now(), 
-                            interval: Union[int, str] = 1, 
-                            raw: bool = False) -> Union[pd.DataFrame, dict, None]:
+                            interval: int | str = 1, 
+                            raw: bool = False) -> pd.DataFrame | dict | None:
     """
     Fetches historical stock data for a given symbol within a specified datetime range for the given interval.
     The interval can be either in minutes or 'D' for Daily, 'W' for Weekly and 'M' for monthly interval data.
@@ -40,29 +38,20 @@ def get_stock_historical_data(stock_symbol: str,
         >>> df = get_stock_historical_data('INFY', datetime(2025, 1, 1), datetime.now(), interval=3)
     """
     try:       
-        params = {
-        "exch":"N",
-        "tradingSymbol":f"{stock_symbol}-EQ",
-        "fromDate":int(start_datetime.timestamp()),
-        "toDate":int(end_datetime.timestamp()) + timedelta(hours=5, minutes=30).seconds,
-        "chartStart":0
-        }
-        if interval in ('D', 'W', 'M'):
-            params.update({'timeInterval': 1, 'chartPeriod': str(interval), 'fromDate': int(start_datetime.timestamp()) - timedelta(hours=5, minutes=30).seconds})
-        else:
-            params.update({'timeInterval': int(interval), 'chartPeriod': 'I'})
-
-
-        resp = scraper.get_request(url=urls.nse_chart, headers=urls.default_headers, params=params)
-        raw_data = resp.json()
-        if raw:
-            return raw_data
-        # otherwise
-        if raw_data.get('s') != 'Ok':
-            return 
-        del raw_data['s']
-        df =  pd.DataFrame(raw_data)
-        return utils.process_historical_chart_response(df=df, interval=interval, start_datetime=start_datetime, end_datetime=end_datetime)
+        search_result = __get_script_token(symbol=stock_symbol)
+        if not search_result:
+            raise ValueError("An error occurred. Token not found.")
+        
+        # unpacking the tuple
+        symbol, token, symbol_type = search_result
+        
+        return __fetch_historical_data(symbol=symbol,
+                                    token=token,
+                                    start_datetime=start_datetime,
+                                    end_datetime=end_datetime,
+                                    interval=interval,
+                                    symbol_type=symbol_type,
+                                    raw=raw)
         
     except Exception as e:
         print(f'ERROR! - {e}\n')
@@ -74,8 +63,8 @@ def get_stock_historical_data(stock_symbol: str,
 def get_index_historical_data(index: str, 
                         start_datetime: datetime, 
                         end_datetime: datetime = datetime.now(), 
-                        interval: Union[str] = 'ONE_DAY', 
-                        raw: bool = False) -> Union[pd.DataFrame, dict, None]:
+                        interval: int | str = '3', 
+                        raw: bool = False) -> pd.DataFrame | dict | None:
     """
     Fetches historical data for the given index within a specified datetime range for the given interval.
     The interval can be either in minutes or 'D' for Daily, 'W' for Weekly and 'M' for monthly interval data.
@@ -104,37 +93,126 @@ def get_index_historical_data(index: str,
         >>> df = get_index_historical_data('NIFTY BANK', datetime(2025, 1, 1), datetime.now(), interval=3)
     """
     try:
-        token = index_tokens.get(index.upper())
-        if not token:
-            raise Exception("Couldn't find the index. Please check the index name.")
-        params = {
-            "exch":"N",
-            "instrType":"C",
-            "scripCode":token,
-            "ulToken":token,
-            "fromDate":int(start_datetime.timestamp()),
-            "toDate":int(end_datetime.timestamp()) + timedelta(hours=5, minutes=30).seconds,
-            "chartStart":0
-        }
-        if interval in ('D', 'W', 'M'):
-            params.update({'timeInterval': 1, 'chartPeriod': interval, 'fromDate': int(start_datetime.timestamp()) - timedelta(hours=5, minutes=30).seconds})
-        else:
-            params.update({'timeInterval': int(interval), 'chartPeriod': 'I'})
-            
-        resp = scraper.get_request(url=urls.nse_chart_symbol, params=params)
-        raw_data = resp.json()
-        if raw:
-            return raw_data
-        # otherwise, processing
-        if raw_data.get('s') != 'Ok':
-            return
-        del raw_data['s']
-        df =  pd.DataFrame(raw_data)
-        df = utils.process_historical_chart_response(df=df, interval=interval, start_datetime=start_datetime, end_datetime=end_datetime)
-        df.drop(columns=['volume'], inplace=True)  
-        return df
+        search_result = __get_script_token(symbol=index)
+        if not search_result:
+            raise ValueError("An error occurred. Token not found.")
+        
+        # unpacking the tuple
+        symbol, token, symbol_type = search_result
+        
+        return __fetch_historical_data(symbol=symbol,
+                                    token=token,
+                                    start_datetime=start_datetime,
+                                    end_datetime=end_datetime,
+                                    interval=interval,
+                                    symbol_type=symbol_type,
+                                    raw=raw)
+        
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
         return None
 
+
+
+# ---------------------------------------------#
+#               Private Functions              #
+# ---------------------------------------------#
+
+def __fetch_historical_data(symbol: str, 
+                           token: str,
+                           start_datetime: datetime, 
+                           end_datetime: datetime, 
+                           interval: int | str = '3',
+                           symbol_type: str = 'Index',
+                           raw: bool = False,
+                           ):
+    try:
+        IST_OFFSET_SECONDS = 5 * 3600 + 30 * 60  # 19800
+        chart_type = 'I'
+        time_interval = 1
+        
+        if interval in ('D', 'W', 'M'):
+            start_datetime = int(start_datetime.timestamp()) 
+            end_datetime = int(end_datetime.timestamp())
+            chart_type = interval
+        else:
+            start_datetime = int(start_datetime.timestamp()) + IST_OFFSET_SECONDS
+            end_datetime = int(end_datetime.timestamp()) + IST_OFFSET_SECONDS
+            time_interval =  int(interval)
+
+        # preparing the payload
+        payload = {
+            'chartType': chart_type, 
+            'fromDate': start_datetime, 
+            'symbol': symbol, 
+            'symbolType': symbol_type,
+            'timeInterval': time_interval,
+            'toDate': end_datetime,
+            'token': token
+        }
+
+        resp = scraper.get_request(url=urls.nse_chart_url, params=payload, headers=urls.default_headers)
+       
+        try:
+            raw_data = resp.json()
+        except Exception:
+            return None
+
+        if raw:
+            return raw_data
+
+        if not isinstance(raw_data, dict) or not raw_data.get('data'):
+            print(f'No Data Returned for the given symbol: {symbol}')
+            return None
+
+        try:
+            del raw_data['status']
+        except KeyError:
+            pass
+
+        df = pd.DataFrame(raw_data['data'])
+        df.columns.name = symbol
+        df = utils.process_historical_chart_response(df=df, interval=interval, start_datetime=start_datetime, end_datetime=end_datetime)
+        return df.drop_duplicates(subset=['datetime']).reset_index(drop=True)
+
+    except Exception as e:
+        print(f'FETCH ERROR! - {e}\n')
+        return None
+
+
+
+def __get_script_token(symbol: str, 
+                       segment: str | None = None, 
+                       scrip_type: str | None = None) -> tuple | pd.DataFrame |  None:
+    try:
+        symbol = symbol.upper()
+        segment_set = {'EQ', 'FO', 'IDX'}
+        params = {
+            'segment': segment if segment in segment_set else '',
+            'symbol': symbol
+        }
+
+        resp = scraper.get_request(url=urls.search_token_url, params=params)
+        data = resp.json()
+        df = pd.DataFrame(data['data'])
+        
+        if scrip_type:
+            if scrip_type in {'Equity', 'Index', 'Futures', 'Options'}:
+                df = df[df['type'] == scrip_type]
+                
+        df['symbol'] = df['symbol'].str.split('-').str[0]
+        x = df[df['symbol'] == symbol]
+        if not len(x):
+            x = df[df['symbol'].str.startswith(symbol)]
+        if not len(x):
+            x = df[df['description'].str.contains(symbol)]
+        
+        symbol = x.iloc[0]['symbol']   
+        token = x.iloc[0]['scripcode']
+        type = x.iloc[0]['type']
+        return symbol, token, type
+    
+    except Exception as e:
+        print(f'Could not find the token for the given symbol: {symbol}')
+        return None

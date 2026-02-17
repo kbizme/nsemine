@@ -129,46 +129,55 @@ def process_aud(df:pd.DataFrame) -> pd.DataFrame:
         return df
 
 
-def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 's', interval: int = 3) -> pd.DataFrame:
+def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 'ms', interval: int = 3) -> pd.DataFrame:
     try:
         if not isinstance(df, pd.DataFrame):
             return df
+        df['temp_datetime'] = df['datetime']
         if not pd.api.types.is_datetime64_dtype(df['datetime']):
             df['temp_datetime'] = pd.to_datetime(df['datetime'], unit=unit)
-        else:
-            df['temp_datetime'] = df['datetime']
 
         df['time'] = df['temp_datetime'].dt.time
-        start_time_obj = pd.to_datetime("09:15:00").time() 
-        end_time_obj = pd.to_datetime("15:30:03").time()
+        start_time_obj = pd.to_datetime("09:15:00").time()
+        end_time_obj = pd.to_datetime("15:30:00").time()
+        print(df)
+        # exit(9)
         filtered_df = df[(df['time'] >= start_time_obj) & (df['time'] < end_time_obj)]
-        return filtered_df.drop(columns=['time', 'temp_datetime'], axis=1)
+        return filtered_df.drop(columns=['time', 'temp_datetime'], axis=0)
     except Exception as e:
         print(f"Error occurred while removing pre and post market prices: {e}")
-        return df 
-    
+        raise e
 
 
 def process_historical_chart_response(df: pd.DataFrame, interval: str, start_datetime: datetime, end_datetime: datetime) -> pd.DataFrame:
     try:
-        df.columns = ['datetime', 'open', 'high', 'low', 'close', 'volume']
+        df = df[['time', 'open', 'high', 'low', 'close', 'volume']].copy()
+        
+        df.rename(columns={'time': 'datetime'}, inplace=True)
+        
         if interval in ('D', 'W', 'M'):
-            df['datetime'] = pd.to_datetime(df['datetime'], unit='s')
+            df['datetime'] = pd.to_datetime(df['datetime'], unit='ms')
             return df
 
         df = remove_pre_and_post_market_prices_from_df(df=df.copy())
+        try:
+            minutes = int(interval) if str(interval) == '1' else 5
+            time_offset_seconds = (minutes - 1) * 60 + 59
+        except Exception:
+            time_offset_seconds = 0
 
-        time_offset = timedelta(minutes=int(interval) - 1, seconds=59)
-        df['datetime'] = df['datetime'] - time_offset.seconds
-    
-        df['datetime'] = pd.to_datetime(df['datetime'], unit='s')
-        df['datetime'] = df['datetime'].apply(lambda dt: dt.replace(second=0, microsecond=0) + timedelta(minutes=1) if dt.second > 1 else dt.replace(second=0, microsecond=0))
-        df = df[(df['datetime'] >= start_datetime) & (df['datetime'] <= end_datetime)]
-        return df.reset_index(drop=True)
-    except Exception as e:
-        print('Exception', e)
-        traceback.print_exc()
+        df['datetime'] = df['datetime'] - time_offset_seconds * 1000
+        df['datetime'] = pd.to_datetime(df['datetime'], unit='ms')
+        df['datetime'] = df['datetime'].apply(
+            lambda dt: dt.replace(second=0, microsecond=0) + timedelta(minutes=1)
+            if dt.second > 1 else dt.replace(second=0, microsecond=0)
+        )
         return df
+    except Exception as e:
+        print('Exception in process_historical_chart_response', e)
+        traceback.print_exc()
+        return None
+
 
 
 def process_movers_data(data):
@@ -183,5 +192,4 @@ def process_movers_data(data):
         return df
     except:
         return data
-    
     

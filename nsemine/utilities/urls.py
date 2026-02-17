@@ -23,13 +23,16 @@ all_losers = 'live-analysis-variations?index=loosers'
 
 base_nse_api = 'https://www.nseindia.com/api/'
 next_api_f = 'https://www.nseindia.com/api/NextApi/apiClient?functionName={}'
-first_boy = 'https://www.nseindia.com/get-quotes/equity?symbol=RELIANCE'
+first_boy = 'https://www.nseindia.com/get-quote/equity/RELIANCE/Reliance-Industries-Limited'
 
 market_status = 'https://www.nseindia.com/api/marketStatus'
 holiday_list = 'https://www.nseindia.com/api/holiday-master?type=trading'
 
-nse_chart = 'https://charting.nseindia.com//Charts/ChartData/'
-nse_chart_symbol = 'https://charting.nseindia.com//Charts/symbolhistoricaldata/'
+nse_chart_url = 'https://charting.nseindia.com/v1/charts/symbolHistoricalData'
+search_token_url = 'https://charting.nseindia.com/v1/exchanges/symbolsDynamic'
+
+
+nse_chart_symbol = 'https://charting.nseindia.com//Charts/symbolhistoricaldata/' # to delete
 nse_all_stocks_live = 'https://www.nseindia.com/api/live-analysis-stocksTraded'
 al_indices = 'https://www.nseindia.com/api/allIndices'
 nse_equity_quote = 'https://www.nseindia.com/api/quote-equity?symbol={}'

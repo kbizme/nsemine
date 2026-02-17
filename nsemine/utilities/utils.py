@@ -140,8 +140,6 @@ def remove_pre_and_post_market_prices_from_df(df: pd.DataFrame, unit: str = 'ms'
         df['time'] = df['temp_datetime'].dt.time
         start_time_obj = pd.to_datetime("09:15:00").time()
         end_time_obj = pd.to_datetime("15:30:00").time()
-        print(df)
-        # exit(9)
         filtered_df = df[(df['time'] >= start_time_obj) & (df['time'] < end_time_obj)]
         return filtered_df.drop(columns=['time', 'temp_datetime'], axis=0)
     except Exception as e:

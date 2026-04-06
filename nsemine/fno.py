@@ -44,7 +44,10 @@ def get_oi_spurts(raw: bool = False, sentiment_analysis: bool = True) -> pd.Data
         
         # converting the turnover from lakh to absolute value
         df['turnover'] = df['turnover'] * 100000
-        
+        df['datetime'] = data.get('timestamp')
+        df['datetime'] = pd.to_datetime(df['datetime'], errors='coerce')
+        df.insert(0, 'datetime', df.pop('datetime'))
+
         if not sentiment_analysis:
             return df
         

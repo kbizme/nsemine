@@ -53,30 +53,36 @@ def get_index_live_price(index: str = 'NIFTY 50', raw: bool = False):
         >>> get_index_live_price(index_name='NIFTY BANK', raw=True)
     """
     try:
-        params = {
-            'index': index,
-        }
-        resp = scraper.get_request(url=urls.nse_equity_index, params=params)
+        resp = scraper.get_request(url=urls.live_index_watch_json)
         raw_data = resp.json()
         if raw:
             return raw_data
         # otherwise,
-        data = raw_data['data']
-        data = data[0]
+        fetched_data = raw_data['data']
+        data = None
+        # searching
+        for item in fetched_data:
+            if item.get('index') == index:
+                data = item
+                break
+        
+        if not data:
+            return
+        
         index_data = {
-            'symbol': data.get('symbol'),
+            'symbol': data.get('index'),
             'open': data.get('open'),
-            'high': data.get('dayHigh'),
-            'low': data.get('dayLow'),
-            'close': data.get('lastPrice'),
+            'high': data.get('high'),
+            'low': data.get('low'),
+            'close': data.get('last'),
             'previous_close': data.get('previousClose'),
-            'change': round(data.get('change'), 2),
-            'changepct': data.get('pChange'),
+            'change': data.get('variation'),
+            'changepct': data.get('percentChange'),
             'year_high': data.get('yearHigh'),
-            'year_low': data.get('yearLow')
+            'year_low': data.get('yearLow'),
         }
         try:
-            index_data['datetime'] = datetime.strptime(data.get('lastUpdateTime'), '%d-%b-%Y %H:%M:%S')
+            index_data['datetime'] = datetime.strptime(raw_data.get('timestamp'), '%d-%b-%Y %H:%M')
         except:
             pass
         return index_data
@@ -212,45 +218,22 @@ def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = Fa
             'index': index,
         }
         resp = scraper.get_request(url=urls.nse_equity_index, params=params)
-        if raw:
-            return resp.json()
-        
-        # otherwise,
         data = resp.json()
-        index_stats = data['advance'], data['timestamp']
+        if raw:
+            return data
+
+        # otherwise,
         data = data['data']
-        del data[0]
         df = pd.DataFrame(data)
-        df[['name', 'derivatives']] = [[item.get('companyName'), item.get('isFNOSec') ] for item in df['meta']]
-        df = df[['symbol', 'name', 'series', 'derivatives', 'open', 'dayHigh', 'dayLow', 'lastPrice', 'previousClose', 'change', 'pChange', 'totalTradedVolume', 'yearHigh', 'yearLow']]
-        df.columns = ['symbol', 'name', 'series', 'derivatives', 'open', 'high', 'low', 'close', 'previous_close', 'change', 'changepct', 'volume', 'year_high', 'year_low']
-        try:
-            df[['open', 'high', 'low', 'close', 'previous_close', 'year_high', 'year_low']] = df[['open', 'high', 'low', 'close', 'previous_close', 'year_high', 'year_low']].astype('float', errors='ignore')
-        except:
-            pass
-        if not stats:
-            return df
-        # otherwise
-        advances = 0
-        declines = 0
-        unchanged = 0
-        timestamp = None
-        try:
-            advances = int(index_stats[0].get('advances'))
-            declines = int(index_stats[0].get('declines'))
-            unchanged = int(index_stats[0].get('unchanged'))
-            timestamp = datetime.strptime(index_stats[1], '%d-%b-%Y %H:%M:%S')
-        except:
-            print('Warning: Exceptions Occurred While Processing Index Stats Data.')
+
+        df.columns = ['change', 'cmSymbol', 'lasttradedPrice','pchange', 'totaltradedquantity', 'totaltradedvalue', 'weightage']
+        df.columns = ['change', 'symbol', 'ltp', 'changepct', 'volume', 'value', 'weightage']
+        df['volume'] = (df['volume'] * 1_00000).astype('int')
+        df['value'] = df['value'] * 1_00_00000
+        df['previous_close'] = df['ltp'] - df['change']
+        df =df[['symbol', 'ltp', 'previous_close', 'change', 'changepct', 'weightage', 'volume', 'value']]
+        return df
                     
-        stats_data = {
-            'total': len(df),
-            'advances': advances,
-            'declines': declines,
-            'unchanged': unchanged,
-            'datetime': timestamp
-        }
-        return df, stats_data
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()

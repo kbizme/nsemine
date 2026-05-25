@@ -35,8 +35,7 @@ search_token_url = 'https://charting.nseindia.com/v1/exchanges/symbolsDynamic'
 nse_chart_symbol = 'https://charting.nseindia.com//Charts/symbolhistoricaldata/' # to delete
 nse_all_stocks_live = 'https://www.nseindia.com/api/live-analysis-stocksTraded'
 al_indices = 'https://www.nseindia.com/api/allIndices'
-nse_equity_quote = 'https://www.nseindia.com/api/quote-equity?symbol={}'
-nse_equity_index = 'https://www.nseindia.com/api/equity-stockIndices'
+nse_equity_quote = 'https://www.nseindia.com/api/NextApi/apiClient/GetQuoteApi?functionName=getSymbolData&marketType=N&series=EQ&symbol={}'
 ticks_chart = 'https://www.nseindia.com/api/chart-databyindex-dynamic?index={}EQN&type=symbol'
 underlying = 'https://www.nseindia.com/api/underlying-information'
 oi_spurts_underlying = 'https://www.nseindia.com/api/live-analysis-oi-spurts-underlyings'
@@ -61,6 +60,8 @@ index_watch = 'https://iislliveblob.niftyindices.com/jsonfiles/LiveIndicesWatch.
 live_index_watch_json = 'https://www.nseindia.com/api/allIndices'
 live_indices = 'https://www.nseindia.com/api/NextApi/apiClient?functionName=getIndexData&&type=All'
 
+######## Index Constituents #######
+nse_equity_index = 'https://www.nseindia.com/api/NextApi/apiClient/indexTrackerApi?functionName=getConstituents&&index={}&&noofrecords=0'
 
 ####### NIFTY HEADERS #######
 def get_nse_headers(profile: str = "api"):

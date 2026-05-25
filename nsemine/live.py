@@ -269,49 +269,53 @@ def get_fno_indices_live_snapshot(df: bool = True) -> Union[pd.DataFrame, dict, 
         'change', 'changepct', 'year_high', 'year_low'].
     """
     try:
-        resp  = scraper.get_request(url=urls.live_index_watch_json + str(time()))
-        url = 'https://www.nseindia.com/api/NextApi/apiClient?functionName=getIndexData&&type=All'
+        resp  = scraper.get_request(url=urls.live_index_watch_json)
         if not resp:
             return None
         
         data = resp.json()
+        timestamp = data.get('timestamp')
         data = data.get('data')
+        timestamp = datetime.strptime(timestamp, '%d-%b-%Y %H:%M') if timestamp else datetime.now()
+        data = data[:10]
         fno_indices = {'NIFTY 50':'NIFTY', 
                        'NIFTY NEXT 50': 'NIFTYNXT50', 
                        'NIFTY BANK': 'BANKNIFTY', 
                        'NIFTY FIN SERVICE': 'FINNIFTY', 
-                       'NIFTY MID SELECT': 'MIDCPNIFTY'}
+                       'NIFTY FINANCIAL SERVICES': 'FINNIFTY', 
+                       'NIFTY MID SELECT': 'MIDCPNIFTY',
+                       'NIFTY MIDCAP SELECT': 'MIDCPNIFTY'}
         if not data:
             return
         if not df:
             fno_data = {}
             for item in data:
-                if item.get('indexName') in fno_indices.keys():
-                    close = float(item.get('last').replace(',',''))
-                    previous_close = float(item.get('previousClose').replace(',',''))
-                    fno_data[fno_indices.get(item.get('indexName'))] = {
-                        'datetime': datetime.strptime(item.get('timeVal'), '%b %d, %Y %H:%M:%S'),
-                        'open': float(item.get('open').replace(',', '')),
-                        'high': float(item.get('high').replace(',', '')),
-                        'low': float(item.get('low').replace(',', '')),
+                current_index = item.get('index')
+                if current_index in fno_indices.keys():
+                    close = item.get('last')
+                    previous_close = item.get('previousClose')
+                    fno_data[fno_indices.get(current_index)] = {
+                        'datetime': timestamp,
+                        'open': item.get('open'),
+                        'high':item.get('high'),
+                        'low': item.get('low'),
                         'close': close,
                         'previous_close': previous_close,
                         'change': round(close - previous_close, 2),
-                        'changepct': float(item.get('percChange').replace(',', '')),
-                        'year_high': float(item.get('yearHigh').replace(',', '')),
-                        'year_low': float(item.get('yearLow').replace(',', ''))
+                        'changepct': item.get('percentChange'),
+                        'year_high': item.get('yearHigh'),
+                        'year_low': item.get('yearLow')
                     }
                 if len(fno_data) == 5:
                     break
             return fno_data
         # dataframe
         df = pd.DataFrame(data)
-        df = df[df['indexName'].isin(fno_indices)]
-        df[['yearLow', 'last', 'yearHigh', 'previousClose', 'high', 'low', 'percChange', 'open']] = df[['yearLow', 'last', 'yearHigh', 'previousClose', 'high', 'low', 'percChange', 'open']].replace(',', '', regex=True).astype('float')
+
+        df = df[df['index'].isin(fno_indices)]
         df['change'] = round(df['last'] - df['previousClose'], 2)
-        df.drop(['indexType', 'indexOrder', 'indexSubType'], inplace=True, axis=1)
-        df['timeVal'] = pd.to_datetime(df['timeVal'], format='%b %d, %Y %H:%M:%S')
-        df = df[['timeVal', 'indexName', 'open', 'high', 'low', 'last', 'previousClose', 'change', 'percChange', 'yearHigh', 'yearLow']]
+        df = df[['index', 'open', 'high', 'low', 'last', 'previousClose', 'change', 'percentChange', 'yearHigh', 'yearLow']]
+        df.insert(0, 'datetime', timestamp)
         df.columns = ['datetime', 'index', 'open', 'high', 'low', 'close', 'previous_close', 'change', 'changepct', 'year_high', 'year_low']
         return df.reset_index(drop=True)
     except Exception as e:

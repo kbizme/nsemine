@@ -58,7 +58,8 @@ historic_bhavcopy_cm = 'https://www.nseindia.com/api/reports?archives=%5B%7B%22n
 ####### NiftyIndices #######
 nifty_index_maping = 'https://iislliveblob.niftyindices.com/assets/json/IndexMapping.json'
 index_watch = 'https://iislliveblob.niftyindices.com/jsonfiles/LiveIndicesWatch.json'
-live_index_watch_json = 'https://iislliveblob.niftyindices.com/jsonfiles/LiveIndicesWatch.json?{}&_='
+live_index_watch_json = 'https://www.nseindia.com/api/allIndices'
+live_indices = 'https://www.nseindia.com/api/NextApi/apiClient?functionName=getIndexData&&type=All'
 
 
 ####### NIFTY HEADERS #######

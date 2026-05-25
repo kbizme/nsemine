@@ -41,7 +41,7 @@ def process_stock_quote_data(quote_data: dict) -> dict:
                 sector = _sec_info.get('sector')
                 industry = _sec_info.get('industryInfo')
                 processed_data['date_of_listing'] = date_of_listing
-                processed_data['last_updated'] = last_updated
+                processed_data['datetime'] = last_updated
                 processed_data['sector'] = sector
                 processed_data['industry'] = industry
                 
@@ -52,11 +52,19 @@ def process_stock_quote_data(quote_data: dict) -> dict:
         if _price_info:
             circuits = _price_info.get('priceBand')
             circuits_price = circuits.split('-') if circuits else None
-
+            year_high = _price_info.get('yearHigh')
+            year_low = _price_info.get('yearLow')
             if circuits_price:
                 processed_data['upper_circuit'] = float(circuits_price[0])
                 processed_data['lower_circuit'] = float(circuits_price[1])
-
+            processed_data['year_high'] = year_high
+            processed_data['year_low'] = year_low
+            
+        _trade_info = quote_data.get('tradeInfo')
+        if _trade_info:
+            volume = _trade_info.get('totalTradedVolume') or _trade_info.get('quantitytraded')  
+            processed_data['volume'] = volume
+            
         return processed_data
     except Exception:
         return quote_data

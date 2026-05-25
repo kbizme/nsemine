@@ -186,7 +186,7 @@ def get_all_securities_live_snapshot(series: Union[str,list] = None, raw: bool =
 
 
 
-def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = False, stats: bool = False):
+def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = False):
     """
     Retrieves live snapshot data of constituents for a specified stock market index from the NSE (National Stock Exchange of India).
 
@@ -196,15 +196,9 @@ def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = Fa
     Args:
         index (str, optional): The name of the index for which to retrieve constituent data. Defaults to 'NIFTY 50'.
         raw (bool, optional): If True, returns the raw JSON response from the API. If False, returns a processed Pandas DataFrame. Defaults to False.
-        stats (bool, optional): If True, returns the timestamp, count of total, advances, declines, and unchanged constituents along with the processed DataFrame. Defaults to False.
 
     Returns:
-        data : Union[pandas.DataFrame or tuple[pandas.DataFrame, dict] or dict or None]: 
-            - If raw is False, returns a Pandas DataFrame containing the constituent data with columns:
-              'symbol', 'name', 'series', 'derivatives', 'open', 'high', 'low', 'close', 'previous_close', 
-              'change', 'changepct', 'volume', 'year_high', 'year_low'.
-            - If raw is True, returns the raw JSON response as a dictionary.
-            - Returns None if an error occurs during data retrieval or processing.
+        data : pandas.DataFrame or dict or None: Returns the constituents live snapshot fo the given index.
 
     Example:
         To get the processed DataFrame for NIFTY BANK:

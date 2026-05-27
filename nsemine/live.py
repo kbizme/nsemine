@@ -198,8 +198,9 @@ def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = Fa
         raw (bool, optional): If True, returns the raw JSON response from the API. If False, returns a processed Pandas DataFrame. Defaults to False.
 
     Returns:
-        data : pandas.DataFrame or dict or None: Returns the constituents live snapshot fo the given index.
-
+        data : pandas.DataFrame or dict or None: Returns the constituents live snapshot fo the given index. 
+                                                Note that the volume is in lakhs and turnover is in crores.
+    
     Example:
         To get the processed DataFrame for NIFTY BANK:
         >>> df = get_index_constituents_live_snapshot(index_name='NIFTY BANK')
@@ -221,11 +222,9 @@ def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = Fa
         df = pd.DataFrame(data)
 
         df.columns = ['change', 'cmSymbol', 'lasttradedPrice','pchange', 'totaltradedquantity', 'totaltradedvalue', 'weightage']
-        df.columns = ['change', 'symbol', 'ltp', 'changepct', 'volume', 'value', 'weightage']
-        df['volume'] = (df['volume'] * 1_00000).astype('int')
-        df['value'] = df['value'] * 1_00_00000
+        df.columns = ['change', 'symbol', 'ltp', 'changepct', 'volume', 'turnover', 'weightage']
         df['previous_close'] = df['ltp'] - df['change']
-        df =df[['symbol', 'ltp', 'previous_close', 'change', 'changepct', 'weightage', 'volume', 'value']]
+        df =df[['symbol', 'ltp', 'previous_close', 'change', 'changepct', 'weightage', 'volume', 'turnover']]
         return df
                     
     except Exception as e:

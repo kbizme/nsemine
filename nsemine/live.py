@@ -53,6 +53,7 @@ def get_index_live_price(index: str = 'NIFTY 50', raw: bool = False):
         >>> get_index_live_price(index_name='NIFTY BANK', raw=True)
     """
     try:
+        index = index.upper().strip()
         resp = scraper.get_request(url=urls.live_index_watch_json)
         raw_data = resp.json()
         if raw:
@@ -62,7 +63,7 @@ def get_index_live_price(index: str = 'NIFTY 50', raw: bool = False):
         data = None
         # searching
         for item in fetched_data:
-            if item.get('index') == index:
+            if item.get('indexSymbol') == index or item.get('index') == index:
                 data = item
                 break
         
@@ -70,7 +71,7 @@ def get_index_live_price(index: str = 'NIFTY 50', raw: bool = False):
             return
         
         index_data = {
-            'symbol': data.get('index'),
+            'symbol': index,
             'open': data.get('open'),
             'high': data.get('high'),
             'low': data.get('low'),

@@ -256,7 +256,7 @@ def get_securities_at_52_weeks_high(raw: bool = False, need_timestamp: bool = Fa
         
         # otherwise
         df = pd.DataFrame(data['data'])
-        df.columns = ['symbol', 'series', 'name', 'new_high', 'previous_high', 'previous_date', 'close', 'previous_close', 'change', 'changepct']
+        df.columns = ['change', 'name', 'close', 'new_high', 'changepct', 'previous_high', 'previous_close', 'previous_date', 'series', 'symbol']
         df['previous_close'] = df['previous_close'].astype('float')
         df['previous_date'] = pd.to_datetime(df['previous_date'],  errors='coerce')
         df['changepct'] = round(df['changepct'], 2)
@@ -298,7 +298,7 @@ def get_securities_at_52_weeks_low(raw: bool = False, need_timestamp: bool = Fal
         
         # otherwise
         df = pd.DataFrame(data['data'])
-        df.columns = ['symbol', 'series', 'name', 'new_low', 'previous_low', 'previous_date', 'close', 'previous_close', 'change', 'changepct']
+        df.columns = ['change', 'name', 'close', 'new_high', 'changepct', 'previous_high', 'previous_close', 'previous_date', 'series', 'symbol']
         df['previous_close'] = df['previous_close'].astype('float')
         df['previous_date'] = pd.to_datetime(df['previous_date'],  errors='coerce')
         df['changepct'] = round(df['changepct'], 2)

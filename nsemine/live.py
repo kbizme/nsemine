@@ -10,7 +10,7 @@ import traceback
 
 
 
-def get_stock_live_quotes(stock_symbol: str, raw: bool = False) -> Union[dict, None]:
+def get_stock_live_quotes(stock_symbol: str, series: str | None = None, raw: bool = False) -> Union[dict, None]:
     """
     Fetches the live quote of the given stock symbol.
     Args:
@@ -22,7 +22,7 @@ def get_stock_live_quotes(stock_symbol: str, raw: bool = False) -> Union[dict, N
         Returns None if any error occurred.
     """
     try:
-        resp = scraper.get_request(url=urls.nse_equity_quote.format(stock_symbol.replace('&', '%26')))
+        resp = scraper.get_request(url=urls.nse_equity_quote.format(series or 'EQ',stock_symbol.replace('&', '%26')))
         if resp:
             data = resp.json()
             if raw:

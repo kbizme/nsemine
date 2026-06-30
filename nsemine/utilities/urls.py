@@ -35,7 +35,7 @@ search_token_url = 'https://charting.nseindia.com/v1/exchanges/symbolsDynamic'
 nse_chart_symbol = 'https://charting.nseindia.com//Charts/symbolhistoricaldata/' # to delete
 nse_all_stocks_live = 'https://www.nseindia.com/api/live-analysis-stocksTraded'
 al_indices = 'https://www.nseindia.com/api/allIndices'
-nse_equity_quote = 'https://www.nseindia.com/api/NextApi/apiClient/GetQuoteApi?functionName=getSymbolData&marketType=N&series=EQ&symbol={}'
+nse_equity_quote = 'https://www.nseindia.com/api/NextApi/apiClient/GetQuoteApi?functionName=getSymbolData&marketType=N&series={}&symbol={}'
 ticks_chart = 'https://www.nseindia.com/api/chart-databyindex-dynamic?index={}EQN&type=symbol'
 underlying = 'https://www.nseindia.com/api/underlying-information'
 oi_spurts_underlying = 'https://www.nseindia.com/api/live-analysis-oi-spurts-underlyings'
@@ -49,6 +49,7 @@ pre_open = 'https://www.nseindia.com/api/market-data-pre-open?key={}'
 
 # CSV
 nse_equity_list = 'https://archives.nseindia.com/content/equities/EQUITY_L.csv'
+nse_sme_stocks = 'https://nsearchives.nseindia.com/emerge/corporates/content/SME_EQUITY_L.csv'
 
 # Archives
 full_bhavcopy_cm = 'https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{session_date}.csv' # 01102025

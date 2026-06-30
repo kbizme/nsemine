@@ -1,13 +1,14 @@
-from typing import  Union
 import requests
 from nsemine.utilities import  urls
-from traceback import print_exc
 from nsemine.bin import auth
 import time
 
 
 
-def get_request(url: str, headers: dict = None, params: dict = None) -> Union[requests.Response, None]:
+def get_request(url: str, 
+                headers: dict = None, 
+                params: dict = None
+    ) -> requests.Response | None:
     try:
         if not headers:
             headers = urls.get_nse_headers()
@@ -42,6 +43,7 @@ def get_request(url: str, headers: dict = None, params: dict = None) -> Union[re
         return None
     except Exception as e:
         print(f'ERROR! - {e}\n')
-        print_exc()
-        return None
+        import traceback
+        traceback.print_exc()
+
 

@@ -139,11 +139,41 @@ def get_all_equities_list(raw: bool = False) -> Union[pd.DataFrame, None]:
             # processing
             df = df[['SYMBOL', 'NAME OF COMPANY', ' SERIES', ' DATE OF LISTING', ' ISIN NUMBER', ' FACE VALUE']]
             df.columns = ['symbol', 'name', 'series', 'date_of_listing', 'isin_number', 'face_value']
-            df['date_of_listing'] = pd.to_datetime(df['date_of_listing'], format='%d-%b-%Y')
+            df['date_of_listing'] = pd.to_datetime(df['date_of_listing'], errors='coerce')
             return df
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
+        
+
+
+def get_all_sme_stocks_list(raw: bool = False) -> Union[pd.DataFrame, None]:
+    """
+    This functions fetches all the available securities in SME Segment of NSE Exchange.
+    Args:
+        raw (bool): Pass True, if you need the raw data without processing.
+    Returns:
+        df (DataFrame) : Pandas DataFrame containing all the nse equity list.
+
+        Returns None, if any error occurred.
+    """
+    try:
+        resp = scraper.get_request(url=urls.nse_sme_stocks)
+        if resp:
+            byte_steams = StringIO(resp.text)
+            df = pd.read_csv(byte_steams)
+            if raw:
+                return df
+            # processing
+            df = df[['SYMBOL', 'NAME_OF_COMPANY', 'SERIES', 'DATE_OF_LISTING', 'ISIN_NUMBER', 'FACE_VALUE']]
+            df.columns = ['symbol', 'name', 'series', 'date_of_listing', 'isin_number', 'face_value']
+            df['date_of_listing'] = pd.to_datetime(df['date_of_listing'], errors='coerce')
+            return df
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+
+
 
 
 def get_fno_stocks_lists(raw: bool = False) -> Union[pd.DataFrame, None]:

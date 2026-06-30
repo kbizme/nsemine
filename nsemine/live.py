@@ -15,6 +15,7 @@ def get_stock_live_quotes(stock_symbol: str, series: str | None = None, raw: boo
     Fetches the live quote of the given stock symbol.
     Args:
         stock_symbol (str): The stock symbol (e.g., "TCS" etc)
+        series (str | None): Series of the given stock symbol. Defaults to 'EQ'.
         raw (bool): Pass True, if you need the raw data without processing. Deafult is False.
         
     Returns:

@@ -167,7 +167,7 @@ def get_all_sme_stocks_list(raw: bool = False) -> Union[pd.DataFrame, None]:
             # processing
             df = df[['SYMBOL', 'NAME_OF_COMPANY', 'SERIES', 'DATE_OF_LISTING', 'ISIN_NUMBER', 'FACE_VALUE']]
             df.columns = ['symbol', 'name', 'series', 'date_of_listing', 'isin_number', 'face_value']
-            df['date_of_listing'] = pd.to_datetime(df['date_of_listing'], errors='coerce')
+            df['date_of_listing'] = pd.to_datetime(df['date_of_listing'], format='%d-%b-%y', errors='coerce')
             return df
     except Exception as e:
         print(f'ERROR! - {e}\n')

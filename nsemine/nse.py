@@ -139,7 +139,7 @@ def get_all_equities_list(raw: bool = False) -> Union[pd.DataFrame, None]:
             # processing
             df = df[['SYMBOL', 'NAME OF COMPANY', ' SERIES', ' DATE OF LISTING', ' ISIN NUMBER', ' FACE VALUE']]
             df.columns = ['symbol', 'name', 'series', 'date_of_listing', 'isin_number', 'face_value']
-            df['date_of_listing'] = pd.to_datetime(df['date_of_listing'], errors='coerce')
+            df['date_of_listing'] = pd.to_datetime(df['date_of_listing'], format='%d-%b-%Y', errors='coerce')
             return df
     except Exception as e:
         print(f'ERROR! - {e}\n')

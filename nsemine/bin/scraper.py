@@ -1,49 +1,93 @@
-import requests
-from nsemine.utilities import  urls
-from nsemine.bin import auth
 import time
+import requests
+from nsemine.utilities import urls
+from nsemine.bin import auth
 
 
 
-def get_request(url: str, 
-                headers: dict = None, 
-                params: dict = None
-    ) -> requests.Response | None:
+
+REQUEST_TIMEOUT = 15
+MAX_RETRIES = 3
+SESSION = requests.Session()
+
+
+
+def _refresh_session_token() -> dict | None:
+    """Fetches and stores a fresh NSE session token."""
     try:
-        if not headers:
-            headers = urls.get_nse_headers()
-        session = requests.Session()
-        session_token = auth.get_session_token()
-        if not session_token:
-            page_header = urls.get_nse_headers(profile='page')
-            session.get(url=urls.first_boy, headers=page_header, timeout=15)
-            session_token = session.cookies.get_dict()
+        page_headers = urls.get_nse_headers(profile="page")
+
+        response = SESSION.get(url=urls.first_boy, headers=page_headers, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+
+        session_token = SESSION.cookies.get_dict()
+        if session_token:
             auth.set_session_token(session_token)
-        for retry_count in range(3):
-            sleep_time = 2**retry_count+time.time()%1
+            return session_token
+
+    except Exception as e:
+        print(f"Failed to refresh NSE session token: {e}")
+        
+
+
+
+def get_request(url: str, headers: dict | None = None,  params: dict | None = None) -> requests.Response | None:
+    """Sends an authenticated GET request to the NSE website."""
+    try:
+        if headers is None:
+            headers = urls.get_nse_headers()
+
+        session_token = auth.get_session_token()
+
+        if session_token is None:
+            session_token = _refresh_session_token()
+            if not session_token:
+                raise ValueError("Failed to Connect to NSE.")
+
+        # sending api request to nse
+        for retry_count in range(MAX_RETRIES):
             try:
-                response = session.get(url=url, headers=headers, params=params, timeout=15, cookies=session_token)
+                response = SESSION.get(url=url, 
+                                       headers=headers, 
+                                       params=params, 
+                                       cookies=session_token, 
+                                       timeout=REQUEST_TIMEOUT
+                                    )
                 response.raise_for_status()
-                if response.status_code == 200:
-                    return response
+                return response
+
             except requests.exceptions.Timeout as e:
-                print(f"Request timed out: {e}\nRetrying...")
+                print(f"Request timed out ({retry_count + 1}/3): {e}")
+
             except requests.exceptions.ConnectionError as e:
-                print(f"Connection error: {e}\nRetrying...")
+                print(f"Connection error ({retry_count + 1}/3): {e}")
+
             except requests.exceptions.HTTPError as e:
-                print(f"HTTP error: {e}\nRetrying...")
+                response = getattr(e, "response", None)
+                status_code = response.status_code if response else None
+                if status_code in (401, 403):
+                    print(f"NSE session expired ({status_code}). Refreshing session token...")
+                    try:
+                        session_token = _refresh_session_token()
+                        if session_token:
+                            continue
+                    except Exception as refresh_error:
+                        print(f"Failed to refresh session token: {refresh_error}")
+                print(f"HTTP error ({retry_count + 1}/3): {e}")
+
             except requests.exceptions.RequestException as e:
-                print(f"Error during request: {e}\nRetrying...")
-            except Exception as e:
-                print(f"Unexpected error: {e}\nRetrying...")
+                print(f"Request error ({retry_count + 1}/3): {e}")
+
             # taking a short nap
-            time.sleep(sleep_time)
-            
+            time.sleep((2 ** retry_count) + (time.time() % 1))
+
         print("Request failed after multiple retries.")
         return None
+
     except Exception as e:
         print(f'ERROR! - {e}\n')
         import traceback
         traceback.print_exc()
+
 
 

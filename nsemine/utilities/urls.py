@@ -48,7 +48,7 @@ new_year_low = 'https://www.nseindia.com/api/live-analysis-data-52weeklowstock'
 pre_open = 'https://www.nseindia.com/api/market-data-pre-open?key={}'
 
 # CSV
-nse_equity_list = 'https://archives.nseindia.com/content/equities/EQUITY_L.csv'
+nse_equity_list = 'https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv'
 nse_sme_stocks = 'https://nsearchives.nseindia.com/emerge/corporates/content/SME_EQUITY_L.csv'
 
 # Archives

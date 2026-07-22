@@ -85,7 +85,7 @@ Fetches the live quote for a stock symbol.
 
 - `stock_symbol`: NSE stock symbol, such as `"TCS"` or `"INFY"`.
 - `series`: NSE series to query. Defaults to `"EQ"` when not provided.
-- `raw`: When `True`, returns the raw NSE JSON response. When `False`, returns a cleaned dictionary from `utils.process_stock_quote_data`.
+- `raw`: When `True`, returns the raw NSE JSON response. When `False`, returns a cleaned dictionary.
 - Returns: `dict` for quote data, or `None` if the request or processing fails.
 
 Example:
@@ -220,24 +220,6 @@ Example:
 ```python
 df = historical.get_index_historical_data("NIFTY 50", datetime(2025, 1, 1), interval="D")
 ```
-
-#### `__fetch_historical_data(symbol: str, token: str, start_datetime: datetime, end_datetime: datetime, interval: int | str = "3", symbol_type: str = "Index", raw: bool = False)`
-
-Private helper used by the public historical functions to call the NSE chart API.
-
-- Converts datetimes to NSE API timestamps.
-- Uses intraday chart type `"I"` for minute intervals and `"D"`, `"W"`, or `"M"` for higher intervals.
-- Builds the chart payload with `symbol`, `token`, `symbolType`, `fromDate`, `toDate`, `chartType`, and `timeInterval`.
-- Returns raw API data when `raw=True`; otherwise returns a de-duplicated processed `pandas.DataFrame`.
-
-#### `__get_script_token(symbol: str, segment: str | None = None, scrip_type: str | None = None)`
-
-Private helper that searches NSE for the token and script type needed by historical chart requests.
-
-- `symbol`: Stock or index symbol to search.
-- `segment`: Optional segment filter. Accepted values are `"EQ"`, `"FO"`, and `"IDX"`.
-- `scrip_type`: Optional type filter. Accepted values are `"Equity"`, `"Index"`, `"Futures"`, and `"Options"`.
-- Returns: `(symbol, token, type)` tuple, or `None` if no token can be found.
 
 ## Module 3: `nse.py`
 

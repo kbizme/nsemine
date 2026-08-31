@@ -1,6 +1,5 @@
 from nsemine.bin import scraper
 from nsemine.utilities import urls, utils
-from typing import Union
 from datetime import datetime
 from time import time
 import json
@@ -10,7 +9,7 @@ import traceback
 
 
 
-def get_stock_live_quotes(stock_symbol: str, series: str | None = None, raw: bool = False) -> Union[dict, None]:
+def get_stock_live_quotes(stock_symbol: str, series: str | None = None, raw: bool = False) -> dict | None:
     """
     Fetches the live quote of the given stock symbol.
     Args:
@@ -97,14 +96,14 @@ def get_index_live_price(index: str = 'NIFTY 50', raw: bool = False):
 
 
 
-def get_all_indices_live_snapshot(raw: bool = False):
+def get_all_indices_live_snapshot(raw: bool = False) -> dict | pd.DataFrame | None:
     """This Functions Returns the Live Snapshot of all the available NSE Indices.
 
     Args:
         raw (bool, optional): Pass True if you want the raw data without processing. Defaults to False.
 
     Returns:
-        DataFrame: Returns the pandas DataFrame containing these columns
+        data (DataFrame | dict | None): Returns the pandas DataFrame containing these columns
         ['key', 'index', 'symbol', 'open', 'high', 'low', 'close','previous_close', 'change', 'changepct', 'year_high', 
         'year_low','advances', 'declines', 'unchanged', 'one_week_ago', 'one_month_ago', 'one_year_ago']
         
@@ -118,14 +117,14 @@ def get_all_indices_live_snapshot(raw: bool = False):
         if not resp:
             return None
         
-        # initializing an empty dataframe
-        df = pd.DataFrame()
+
         raw_data = resp.json()
         if raw:
             return raw_data
         
         # otherwise
         data = raw_data.get('data')
+        
         df = pd.DataFrame(data)
         df = df.dropna()
         df = df[['key', 'index', 'indexSymbol', 'open', 'high', 'low', 'last', 'previousClose', 'variation', 'percentChange', 'yearHigh', 'yearLow','advances', 'declines', 'unchanged', 'oneYearAgoVal', 'oneMonthAgoVal', 'oneYearAgoVal']]
@@ -139,7 +138,7 @@ def get_all_indices_live_snapshot(raw: bool = False):
 
 
 
-def get_all_securities_live_snapshot(series: Union[str,list] = None, raw: bool = False) -> Union[pd.DataFrame, dict, None]:
+def get_all_securities_live_snapshot(series: str |list = None, raw: bool = False) -> pd.DataFrame | dict | None:
     """Fetches the live snapshot all the available securities in the NSE Exchange.
     This snapshot includes the last price (close), previous_close price, change, change percentage, volume etc.
     Args:
@@ -200,7 +199,7 @@ def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = Fa
         raw (bool, optional): If True, returns the raw JSON response from the API. If False, returns a processed Pandas DataFrame. Defaults to False.
 
     Returns:
-        data : pandas.DataFrame or dict or None: Returns the constituents live snapshot fo the given index. 
+        data (pandas.DataFrame or dict or None): Returns the constituents live snapshot fo the given index. 
                                                 Note that the volume is in lakhs and turnover is in crores.
     
     Example:
@@ -234,76 +233,157 @@ def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = Fa
         traceback.print_exc()
 
 
-def get_fno_indices_live_snapshot(df: bool = True) -> Union[pd.DataFrame, dict, None]:
-    """This functions returns the live snapshot of the fno indices of the NSE Exchange.
-        Fno Indices are: NIFTY 50, NIFTY NEXT 50, NIFTY BANK, NIFTY FINANCIAL SERVICES & NIFTY MIDCAP SELECT
+def get_fno_indices_live_snapshot(df: bool = False) -> pd.DataFrame | dict | None:
+    """
+    Returns the live market snapshot of NSE F&O indices.
+
+    The snapshot includes current OHLC data, price change, yearly range,
+    market breadth, and weekly, monthly, and yearly performance.
+
     Args:
-        df (bool) : If you don't want dataframe format, then you can pass df=False, then the dictionary format data will be returned. defaults to True
+        df (bool): If True, returns a DataFrame. If False, returns a dictionary
+            keyed by index names. Defaults to False.
 
     Returns:
-        data (DataFrame or dict or None): Returns the live snapshot as Pandas DataFrame or Dictionary. None If any error occurs.
-
-    Note: The DataFrame contains these columns ['datetime', 'index', 'open', 'high', 'low', 'close', 'previous_close',
-        'change', 'changepct', 'year_high', 'year_low'].
+        data (DataFrame | dict | None): Live F&O-index snapshot, or None if the source request fails or no supported indices are available.
     """
     try:
-        resp  = scraper.get_request(url=urls.live_index_watch_json)
+        resp = scraper.get_request(url=urls.live_index_watch_json)
+
         if not resp:
             return None
-        
-        data = resp.json()
-        timestamp = data.get('timestamp')
-        data = data.get('data')
-        timestamp = datetime.strptime(timestamp, '%d-%b-%Y %H:%M') if timestamp else datetime.now()
-        data = data[:10]
-        fno_indices = {'NIFTY 50':'NIFTY', 
-                       'NIFTY NEXT 50': 'NIFTYNXT50', 
-                       'NIFTY BANK': 'BANKNIFTY', 
-                       'NIFTY FIN SERVICE': 'FINNIFTY', 
-                       'NIFTY FINANCIAL SERVICES': 'FINNIFTY', 
-                       'NIFTY MID SELECT': 'MIDCPNIFTY',
-                       'NIFTY MIDCAP SELECT': 'MIDCPNIFTY'}
+
+        payload = resp.json()
+        timestamp = payload.get("timestamp")
+        data = payload.get("data")
+
+        timestamp = (
+            datetime.strptime(timestamp, "%d-%b-%Y %H:%M")
+            if timestamp else datetime.now()
+        )
+
         if not data:
-            return
+            return None
+
+        fno_indices = {
+            "NIFTY 50": "NIFTY",
+            "NIFTY NEXT 50": "NIFTYNXT50",
+            "NIFTY BANK": "BANKNIFTY",
+            "NIFTY FIN SERVICE": "FINNIFTY",
+            "NIFTY FINANCIAL SERVICES": "FINNIFTY",
+            "NIFTY MID SELECT": "MIDCPNIFTY",
+            "NIFTY MIDCAP SELECT": "MIDCPNIFTY",
+        }
+
         if not df:
             fno_data = {}
+
             for item in data:
-                current_index = item.get('index')
-                if current_index in fno_indices.keys():
-                    close = item.get('last')
-                    previous_close = item.get('previousClose')
-                    fno_data[fno_indices.get(current_index)] = {
-                        'datetime': timestamp,
-                        'open': item.get('open'),
-                        'high':item.get('high'),
-                        'low': item.get('low'),
-                        'close': close,
-                        'previous_close': previous_close,
-                        'change': round(close - previous_close, 2),
-                        'changepct': item.get('percentChange'),
-                        'year_high': item.get('yearHigh'),
-                        'year_low': item.get('yearLow')
-                    }
+                quant_index = fno_indices.get(item.get("index"))
+
+                if not quant_index:
+                    continue
+
+                close = item.get("last")
+                previous_close = item.get("previousClose")
+                one_week_ago_value = item.get("oneWeekAgoVal")
+
+                fno_data[quant_index] = {
+                    "datetime": timestamp,
+                    "open": item.get("open"),
+                    "high": item.get("high"),
+                    "low": item.get("low"),
+                    "close": close,
+                    "previous_close": previous_close,
+                    "change": (
+                        round(close - previous_close, 2)
+                        if close is not None and previous_close else None
+                    ),
+                    "changepct": item.get("percentChange"),
+                    "year_high": item.get("yearHigh"),
+                    "year_low": item.get("yearLow"),
+                    "advances": item.get("advances"),
+                    "declines": item.get("declines"),
+                    "unchanged": item.get("unchanged"),
+                    "changepct_weekly": (
+                        round((close - one_week_ago_value) / one_week_ago_value * 100, 2)
+                        if close and one_week_ago_value not in (None, 0) else None
+                    ),
+                    "changepct_monthly": item.get("perChange30d"),
+                    "changepct_yearly": item.get("perChange365d"),
+                }
+
                 if len(fno_data) == 5:
                     break
-            return fno_data
-        # dataframe
-        df = pd.DataFrame(data)
 
-        df = df[df['index'].isin(fno_indices)]
-        df['change'] = round(df['last'] - df['previousClose'], 2)
-        df = df[['index', 'open', 'high', 'low', 'last', 'previousClose', 'change', 'percentChange', 'yearHigh', 'yearLow']]
-        df.insert(0, 'datetime', timestamp)
-        df.columns = ['datetime', 'index', 'open', 'high', 'low', 'close', 'previous_close', 'change', 'changepct', 'year_high', 'year_low']
+            return fno_data or None
+
+        df = pd.DataFrame(data)
+        df = df[df["index"].isin(fno_indices)]
+
+        if df.empty:
+            return None
+
+        df["change"] = (df["last"] - df["previousClose"]).round(2)
+        df["changepct_weekly"] = (
+            ((df["last"] - df["oneWeekAgoVal"]) / df["oneWeekAgoVal"]) * 100
+        ).round(2)
+        df["changepct_monthly"] = df["perChange30d"]
+        df["changepct_yearly"] = df["perChange365d"]
+
+        df = df[
+            [
+                "index",
+                "open",
+                "high",
+                "low",
+                "last",
+                "previousClose",
+                "change",
+                "percentChange",
+                "yearHigh",
+                "yearLow",
+                "advances",
+                "declines",
+                "unchanged",
+                "changepct_weekly",
+                "changepct_monthly",
+                "changepct_yearly",
+            ]
+        ]
+
+        df.insert(0, "datetime", timestamp)
+
+        df.columns = [
+            "datetime",
+            "index",
+            "open",
+            "high",
+            "low",
+            "close",
+            "previous_close",
+            "change",
+            "changepct",
+            "year_high",
+            "year_low",
+            "advances",
+            "declines",
+            "unchanged",
+            "changepct_weekly",
+            "changepct_monthly",
+            "changepct_yearly",
+        ]
+
         return df.reset_index(drop=True)
+
     except Exception as e:
-        print(f'ERROR! - {e}\n')
+        print(f"ERROR! - {e}\n")
         traceback.print_exc()
         return None
     
 
 
-def get_stock_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int = None, raw: bool = False):
+def get_stock_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int = None, raw: bool = False) -> pd.DataFrame:
     """
     Retrieves intraday tick-by-tick data for a given stock symbol and optionally converts it to OHLC candles.
     **Note:** 
@@ -314,8 +394,9 @@ def get_stock_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int
         raw (bool, optional): If True, returns the raw JSON response. If False, returns a pandas DataFrame. Defaults to False.
 
     Returns:
-        pandas.DataFrame or dict: A pandas DataFrame containing tick data or OHLC candles, or the raw JSON response if raw=True.
+        data (pandas.DataFrame or dict or None): A pandas DataFrame containing tick data or OHLC candles, or the raw JSON response if raw=True.
         Returns None in case of errors.
+        
     ## Notes:
         - This functions fetches the tick data of the current day only.
         - The candle interval can be any minutes. 1,2,3.7....69.......143...uptp 375. Whoa!! Are you kidding me? :))

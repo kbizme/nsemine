@@ -302,9 +302,9 @@ def get_fno_indices_live_snapshot(df: bool = False) -> pd.DataFrame | dict | Non
                     "changepct": item.get("percentChange"),
                     "year_high": item.get("yearHigh"),
                     "year_low": item.get("yearLow"),
-                    "advances": item.get("advances"),
-                    "declines": item.get("declines"),
-                    "unchanged": item.get("unchanged"),
+                    "advances": int(item["advances"]) if item.get("advances") else None,
+                    "declines": int(item["declines"]) if item.get("declines") else None,
+                    "unchanged": int(item["unchanged"]) if item.get("unchanged") else None,
                     "changepct_weekly": (
                         round((close - one_week_ago_value) / one_week_ago_value * 100, 2)
                         if close and one_week_ago_value not in (None, 0) else None

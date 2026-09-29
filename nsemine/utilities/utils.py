@@ -64,6 +64,10 @@ def process_stock_quote_data(quote_data: dict) -> dict:
         if _trade_info:
             volume = _trade_info.get('totalTradedVolume') or _trade_info.get('quantitytraded')  
             processed_data['volume'] = volume
+        
+        # close price fallback during market hours
+        if not processed_data.get('close'):
+            processed_data['close'] = processed_data.get('previous_close', 0) + processed_data.get('change', 0)
             
         return processed_data
     except Exception:

@@ -37,8 +37,9 @@ def get_stock_historical_data(stock_symbol: str,
         - To get 3-minute interval data.
         >>> df = get_stock_historical_data('INFY', datetime(2025, 1, 1), datetime.now(), interval=3)
     """
-    try:       
+    try:
         search_result = __get_script_token(symbol=stock_symbol)
+
         if not search_result:
             raise ValueError("An error occurred. Token not found.")
         
@@ -201,7 +202,7 @@ def __get_script_token(symbol: str,
             if scrip_type in {'Equity', 'Index', 'Futures', 'Options'}:
                 df = df[df['type'] == scrip_type]
                 
-        df['symbol'] = df['symbol'].str.split('-').str[0]
+        df['symbol'] = df['symbol'].str.rsplit('-', n=1).str[0]
         x = df[df['symbol'] == symbol]
         if not len(x):
             x = df[df['symbol'].str.startswith(symbol)]

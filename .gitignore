@@ -1,4 +1,5 @@
 .env
+.venv
 play.py
 **/__pycache__
 dist

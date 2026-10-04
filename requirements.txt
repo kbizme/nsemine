@@ -1,5 +1,5 @@
-aiohttp==3.13.4
-asyncio==3.4.3
-numpy==2.3.1
-pandas==2.3.0
-requests==2.32.4
+aiohttp
+asyncio
+numpy
+pandas
+curl_cffi

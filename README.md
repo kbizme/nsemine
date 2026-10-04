@@ -319,14 +319,14 @@ Fetches option chain data for a given stock or index symbol and filters by expir
 ```python
 from datetime import date
 
-# Fetch option chain for NIFTY index for a specific expiry
+# Fetch option chain for NIFTY index
 nifty_chain = fno.get_option_chain(
     symbol="NIFTY", 
     expiry_date=date(2026, 10, 27), 
     underlying_type="Indices"
 )
 
-# Fetch option chain for an equity stock (defaults to nearest active expiry if expiry_date is None)
+# Fetch option chain for an equity stock
 adanient_chain = fno.get_option_chain(
     symbol="TCS", 
     expiry_date=date(2026, 10, 27), 

@@ -1,22 +1,26 @@
 import time
-import requests
+import random
+import asyncio
+from curl_cffi import requests
 from nsemine.utilities import urls
 from nsemine.bin import auth
 
 
-
-
 REQUEST_TIMEOUT = 15
 MAX_RETRIES = 3
-SESSION = requests.Session()
+
+# Synchronous Global Session
+SESSION = requests.Session(impersonate="chrome")
+CURRENT_PROFILE_IDX = 0
+
 
 
 
 def _refresh_session_token() -> dict | None:
-    """Fetches and stores a fresh NSE session token."""
+    """Synchronous session refresh."""
     try:
-        page_headers = urls.get_nse_headers(profile="page")
-
+        SESSION.cookies.clear()
+        page_headers = urls.get_nse_headers(profile="page", profile_idx=CURRENT_PROFILE_IDX)
         response = SESSION.get(url=urls.first_boy, headers=page_headers, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
 
@@ -27,67 +31,141 @@ def _refresh_session_token() -> dict | None:
 
     except Exception as e:
         print(f"Failed to refresh NSE session token: {e}")
-        
+        return None
 
 
 
-def get_request(url: str, headers: dict | None = None,  params: dict | None = None) -> requests.Response | None:
-    """Sends an authenticated GET request to the NSE website."""
+async def _async_refresh_session_token(async_session: requests.AsyncSession) -> dict | None:
+    """Asynchronous session refresh (Non-blocking I/O)."""
+    try:
+        async_session.cookies.clear()
+        page_headers = urls.get_nse_headers(profile="page", profile_idx=CURRENT_PROFILE_IDX)
+        response = await async_session.get(url=urls.first_boy, headers=page_headers, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+
+        session_token = async_session.cookies.get_dict()
+        if session_token:
+            auth.set_session_token(session_token)
+            return session_token
+
+    except Exception as e:
+        print(f"Failed to refresh NSE session token asynchronously: {e}")
+        return None
+
+
+
+def get_request(url: str, headers: dict | None = None, params: dict | None = None) -> requests.Response | None:
     try:
         if headers is None:
-            headers = urls.get_nse_headers()
+            headers = urls.get_nse_headers(profile="api", profile_idx=CURRENT_PROFILE_IDX)
 
         session_token = auth.get_session_token()
 
-        if session_token is None:
+        if not session_token:
             session_token = _refresh_session_token()
             if not session_token:
-                raise ValueError("Failed to Connect to NSE.")
+                raise ValueError("Failed to establish session with NSE.")
 
-        # sending api request to nse
+        SESSION.cookies.update(session_token)
+
         for retry_count in range(MAX_RETRIES):
             try:
-                response = SESSION.get(url=url, 
-                                       headers=headers, 
-                                       params=params, 
-                                       cookies=session_token, 
-                                       timeout=REQUEST_TIMEOUT
-                                    )
+                response = SESSION.get(
+                    url=url, 
+                    headers=headers, 
+                    params=params, 
+                    timeout=REQUEST_TIMEOUT
+                )
                 response.raise_for_status()
+
+                # Persist updated telemetry cookies to SQLite
+                updated_cookies = SESSION.cookies.get_dict()
+                if updated_cookies:
+                    auth.set_session_token(updated_cookies)
+
                 return response
 
-            except requests.exceptions.Timeout as e:
-                print(f"Request timed out ({retry_count + 1}/3): {e}")
-
-            except requests.exceptions.ConnectionError as e:
-                print(f"Connection error ({retry_count + 1}/3): {e}")
-
-            except requests.exceptions.HTTPError as e:
-                response = getattr(e, "response", None)
-                status_code = response.status_code if response else None
+            except requests.errors.RequestsError as e:
+                status_code = getattr(e.response, "status_code", None) if hasattr(e, "response") else None
+                
                 if status_code in (401, 403):
-                    print(f"NSE session expired ({status_code}). Refreshing session token...")
+                    print(f"NSE session expired/blocked ({status_code}). Refreshing session...")
                     try:
                         session_token = _refresh_session_token()
                         if session_token:
+                            SESSION.cookies.update(session_token)
                             continue
                     except Exception as refresh_error:
-                        print(f"Failed to refresh session token: {refresh_error}")
-                print(f"HTTP error ({retry_count + 1}/3): {e}")
+                        print(f"Dynamic token refresh failed: {refresh_error}")
+                
+                print(f"Network exception (Retry {retry_count + 1}/{MAX_RETRIES}): {e}")
 
-            except requests.exceptions.RequestException as e:
-                print(f"Request error ({retry_count + 1}/3): {e}")
+            time.sleep((2 ** retry_count) + random.uniform(0.5, 1.5))
 
-            # taking a short nap
-            time.sleep((2 ** retry_count) + (time.time() % 1))
-
-        print("Request failed after multiple retries.")
+        print("Data extraction terminated: Maximum retries reached.")
         return None
 
     except Exception as e:
-        print(f'ERROR! - {e}\n')
-        import traceback
-        traceback.print_exc()
+        print(f"CRITICAL FAILURE in get_request: {e}")
+        return None
 
 
 
+async def async_get_request(
+        url: str, 
+        headers: dict | None = None, 
+        params: dict | None = None,
+        session: requests.AsyncSession | None = None
+    ) -> requests.Response | None:
+    if headers is None:
+        headers = urls.get_nse_headers(profile="api", profile_idx=CURRENT_PROFILE_IDX)
+
+    session_token = auth.get_session_token()
+
+    # Shared or standalone async session handler
+    close_session = False
+    if session is None:
+        session = requests.AsyncSession(impersonate="chrome")
+        close_session = True
+
+    try:
+        if not session_token:
+            session_token = await _async_refresh_session_token(session)
+            if not session_token:
+                return None
+
+        session.cookies.update(session_token)
+
+        for retry_count in range(MAX_RETRIES):
+            try:
+                response = await session.get(
+                    url=url, 
+                    headers=headers, 
+                    params=params, 
+                    timeout=REQUEST_TIMEOUT
+                )
+                response.raise_for_status()
+
+                updated_cookies = session.cookies.get_dict()
+                if updated_cookies:
+                    auth.set_session_token(updated_cookies)
+
+                return response
+
+            except requests.errors.RequestsError as e:
+                status_code = getattr(e.response, "status_code", None) if hasattr(e, "response") else None
+
+                if status_code in (401, 403):
+                    session_token = await _async_refresh_session_token(session)
+                    if session_token:
+                        session.cookies.update(session_token)
+                        continue
+
+            await asyncio.sleep((2 ** retry_count) + random.uniform(0.5, 1.5))
+
+        return None
+    finally:
+        if close_session:
+            await session.close()
+            
+            

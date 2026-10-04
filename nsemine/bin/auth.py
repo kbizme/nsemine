@@ -1,85 +1,85 @@
 import sqlite3
-import os
 import json
 from pathlib import Path
 from datetime import datetime, timedelta
 
 
+DB_PATH = Path(__file__).resolve().parent / "nsedb.db"
 
-def initialize_database():
-    try:
-        db_path = Path(__file__).resolve().parent
-        conn = sqlite3.connect(database=os.path.join(db_path, 'nsedb.db'))
-        cur = conn.cursor()
-        cur.execute("""
-                    CREATE TABLE IF NOT EXISTS credentials (
-                        id TEXT,
-                        session_token TEXT, 
-                        updated_on TEXT
-                        );
-                    """)
-        conn.commit()
-        conn.close()
-    except (sqlite3.OperationalError, Exception):
-        conn.close()
-        pass
-    finally:
-        if conn:
-            conn.close()
+
 
 
 def get_db_connection():
-        try:
-            db_path = Path(__file__).resolve().parent
-            conn = sqlite3.connect(os.path.join(db_path, 'nsedb.db'))
-            return conn, conn.cursor()
-        except Exception:
-            conn.close()
-            return None
-
-
-def set_session_token(session_token):
-    if not isinstance(session_token, dict):
-        return
-    nsit = session_token.get('nsit')
-    nseappid = session_token.get('nseappid')
-    if not nsit and not nseappid:
-        return
-    data = json.dumps({'nsit': nsit, 'nseappid': nseappid})
     try:
-        conn, cursor = get_db_connection()
-        cursor.execute(f"SELECT * FROM credentials WHERE id=?",  ('almighty',))
-        existing_row = cursor.fetchone()
-        if existing_row:
-            cursor.execute("UPDATE credentials SET session_token=?, updated_on=? WHERE id=?", (data, str(datetime.now()), 'almighty'))
-        else:
-            cursor.execute("INSERT INTO credentials (id, session_token, updated_on) VALUES (?, ?, ?)", ('almighty', data, str(datetime.now())))
-        conn.commit()
+        conn = sqlite3.connect(DB_PATH, timeout=10.0)
+        conn.execute("PRAGMA journal_mode=WAL;")
+        return conn
     except Exception as e:
-        print(e)
-        conn.close()
-    finally:
-        if conn:
-            conn.close()
+        print(f"Database connection failure: {e}")
+        return None
 
 
-def get_session_token():
+def initialize_database():
+    conn = get_db_connection()
+    if not conn:
+        return
     try:
-        conn, cursor = get_db_connection()
-        cursor.execute("SELECT * FROM credentials WHERE id=?", ('almighty',))
-        data = cursor.fetchone()
-        if data:
-            offset = datetime.now() - datetime.strptime(data[2], '%Y-%m-%d %H:%M:%S.%f')
-            if offset < timedelta(hours=1, minutes=30):
-                conn.close()
-                return json.loads(data[1])
-        if conn:
-            conn.close()
+        with conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS credentials (
+                    id TEXT PRIMARY KEY,
+                    session_token TEXT,
+                    updated_on TEXT
+                );
+            """)
+    finally:
+        conn.close()
+
+
+def set_session_token(session_token: dict):
+    if not isinstance(session_token, dict) or not session_token:
+        return
+        
+    conn = get_db_connection()
+    if not conn:
+        return
+    try:
+        data = json.dumps(session_token)
+        now_str = datetime.now().isoformat()
+        with conn:
+            conn.execute("""
+                INSERT INTO credentials (id, session_token, updated_on)
+                VALUES ('almighty', ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    session_token = excluded.session_token,
+                    updated_on = excluded.updated_on;
+            """, (data, now_str))
+    except Exception as e:
+        print(f"Database write error: {e}")
+    finally:
+        conn.close()
+
+
+def get_session_token(max_age_minutes: int = 60) -> dict | None:
+    conn = get_db_connection()
+    if not conn:
         return None
-    except Exception:
-        if conn:
-            conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT session_token, updated_on FROM credentials WHERE id=?", ('almighty',))
+        row = cursor.fetchone()
+        if row:
+            session_json, updated_str = row
+            updated_time = datetime.fromisoformat(updated_str)
+            if datetime.now() - updated_time < timedelta(minutes=max_age_minutes):
+                return json.loads(session_json)
         return None
+    except Exception as e:
+        print(f"Database read error: {e}")
+        return None
+    finally:
+        conn.close()
+
 
 # database initialization
 initialize_database()

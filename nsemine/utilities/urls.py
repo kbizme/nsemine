@@ -1,8 +1,4 @@
-from random import choice
-
-
-# HEADERS
-# initial headers
+# HEADERS & ENDPOINTS
 default_headers = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
     'Connection': 'keep-alive',
@@ -31,14 +27,13 @@ holiday_list = 'https://www.nseindia.com/api/holiday-master?type=trading'
 nse_chart_url = 'https://charting.nseindia.com/v1/charts/symbolHistoricalData'
 search_token_url = 'https://charting.nseindia.com/v1/exchanges/symbolsDynamic'
 
-
-nse_chart_symbol = 'https://charting.nseindia.com//Charts/symbolhistoricaldata/' # to delete
 nse_all_stocks_live = 'https://www.nseindia.com/api/live-analysis-stocksTraded'
 al_indices = 'https://www.nseindia.com/api/allIndices'
 nse_equity_quote = 'https://www.nseindia.com/api/NextApi/apiClient/GetQuoteApi?functionName=getSymbolData&marketType=N&series={}&symbol={}'
 ticks_chart = 'https://www.nseindia.com/api/chart-databyindex-dynamic?index={}EQN&type=symbol'
 underlying = 'https://www.nseindia.com/api/underlying-information'
 oi_spurts_underlying = 'https://www.nseindia.com/api/live-analysis-oi-spurts-underlyings'
+
 # DERIVATIVES
 stk_opt_url = 'https://www.nseindia.com/api/option-chain-contract-info?symbol={}'   
 
@@ -64,89 +59,69 @@ live_indices = 'https://www.nseindia.com/api/NextApi/apiClient?functionName=getI
 ######## Index Constituents #######
 nse_equity_index = 'https://www.nseindia.com/api/NextApi/apiClient/indexTrackerApi?functionName=getConstituents&&index={}&&noofrecords=0'
 
-####### NIFTY HEADERS #######
-def get_nse_headers(profile: str = "api"):
+
+####### CHROME PROFILES #######
+CHROME_PROFILES = [
+    {
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+        "platform": '"Windows"',
+        "sec_ch_ua": '"Chromium";v="134", "Not:A-Brand";v="24", "Google Chrome";v="134"'
+    },
+    {
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        "platform": '"Windows"',
+        "sec_ch_ua": '"Chromium";v="133", "Not:A-Brand";v="24", "Google Chrome";v="133"'
+    },
+    {
+        "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+        "platform": '"Linux"',
+        "sec_ch_ua": '"Chromium";v="134", "Not:A-Brand";v="24", "Google Chrome";v="134"'
+    }
+]
+
+ACCEPT_API_VARIANTS = [
+    "application/json, text/javascript, */*; q=0.01",
+    "application/json, text/plain, */*",
+    "*/*"
+]
+
+
+def get_nse_headers(profile: str = "api", profile_idx: int = 0, referer: str | None = None) -> dict:
     """
-    Returns randomized headers for NSE requests.
-
-    Args:
-        profile (str): "page" → For HTML pages like first_boy
-                       "api"  → For JSON/XHR API endpoints
-
-    Returns:
-        dict: Headers dictionary ready for requests
+    Generates strict Chrome headers matching curl_cffi's TLS fingerprint.
+    Uses profile_idx to maintain User-Agent consistency across authentication and requests.
+    Allows optional custom referer overriding.
     """
-
-    # User-Agent options with platform
-    user_agents = [
-        # Windows
-        ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-         "(KHTML, like Gecko) Chrome/139.0 Safari/537.36 OPR/120", "Windows"),
-        ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-         "(KHTML, like Gecko) Chrome/139.0 Safari/537.36 Edg/139", "Windows"),
-        ("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0", "Windows"),
-
-        # macOS
-        ("Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/605.1.15 "
-         "(KHTML, like Gecko) Version/17.0 Safari/605.1.15", "macOS"),
-        ("Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/537.36 "
-         "(KHTML, like Gecko) Chrome/139.0 Safari/537.36 Edg/139", "macOS"),
-        ("Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/537.36 "
-         "(KHTML, like Gecko) Chrome/139.0 Safari/537.36 Vivaldi/7.5", "macOS"),
-
-        # Linux
-        ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-         "(KHTML, like Gecko) Chrome/139.0 Safari/537.36", "Linux"),
-        ("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:141.0) Gecko/20100101 Firefox/141.0", "Linux"),
-    ]
-
-    # Accept-Language options
-    accept_languages = [
-        "en-US,en;q=0.9",
-        "en-GB,en;q=0.9",
-        "en-IN,en;q=0.8",
-        "en;q=0.9,fr;q=0.8,de;q=0.7,ro;q=0.6",
-    ]
-
-    # Accept header options for API
-    accept_api = [
-        "application/json, text/javascript, */*; q=0.01",
-        "application/json, */*; q=0.01",
-        "application/json, text/plain, */*; q=0.01"
-    ]
-
-    # Pick random User-Agent and platform
-    user_agent, platform = choice(user_agents)
-
-    # Determine sec-ch-ua based on browser type in User-Agent
-    if "Edg" in user_agent:
-        sec_ch_ua = '"Chromium";v="139", "Not.A/Brand";v="8", "Microsoft Edge";v="139"'
-    elif "OPR" in user_agent or "Vivaldi" in user_agent:
-        sec_ch_ua = '"Chromium";v="139", "Not.A/Brand";v="8", "Opera";v="120"'
-    elif "Firefox" in user_agent:
-        sec_ch_ua = '"Mozilla Firefox";v="141"'
-    else:  # Chrome fallback
-        sec_ch_ua = '"Chromium";v="139", "Not.A/Brand";v="8", "Chrome";v="139"'
-
-    # Base headers
+    selected = CHROME_PROFILES[profile_idx % len(CHROME_PROFILES)]
+    
     headers = {
-        "Accept-Language": choice(accept_languages),
+        "User-Agent": selected["ua"],
+        "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate, br, zstd",
         "Connection": "keep-alive",
-        "Cache-Control": "max-age=0",
-        "User-Agent": user_agent,
-        "sec-ch-ua": sec_ch_ua,
+        "sec-ch-ua": selected["sec_ch_ua"],
         "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": platform,
-        "Referer": "https://www.nseindia.com/",
-        "X-Requested-With": "XMLHttpRequest"
+        "sec-ch-ua-platform": selected["platform"],
     }
 
-    # Profile-specific headers
     if profile == "page":
-        headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/png,image/webp,*/*;q=0.8"
-        headers["Upgrade-Insecure-Requests"] = "1"
-    else:  # "api"
-        headers["Accept"] = choice(accept_api)
+        headers.update({
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Referer": referer or "https://www.google.com/",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "cross-site",
+            "Sec-Fetch-User": "?1"
+        })
+    else:  # "api" profile
+        headers.update({
+            "Accept": ACCEPT_API_VARIANTS[0],
+            "Referer": referer or "https://www.nseindia.com/market-data/live-equity-market",
+            "X-Requested-With": "XMLHttpRequest",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin"
+        })
 
     return headers

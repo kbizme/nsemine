@@ -1,11 +1,10 @@
-from nsemine.bin import scraper
+from nsemine.bin import autils, scraper
 from nsemine.utilities import urls, utils
 from datetime import datetime
-from time import time
-import json
 import pandas as pd
+import asyncio
 import traceback
-
+from curl_cffi import requests
 
 
 
@@ -32,6 +31,41 @@ def get_stock_live_quotes(stock_symbol: str, series: str | None = None, raw: boo
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
+
+
+
+def get_multiple_stock_live_quotes(
+    symbols: list | set | tuple, 
+    series: str = 'EQ', 
+    raw: bool = False, 
+    df: bool = True,
+    max_concurrent: int = 25
+) -> pd.DataFrame | dict:
+    """
+    Synchronous entry point for fetching multiple stock quotes concurrently with controlled throttling.
+    
+    Args:
+        symbols (list | set | tuple): Stock symbols (e.g. ['TCS', 'HDFCBANK', 'INFY'])
+        series (str): Equity series, default 'EQ'
+        raw (bool): If True, returns dict of raw API JSON responses
+        df (bool): If True, returns Pandas DataFrame; if False, returns dict of dicts
+        max_concurrent (int): Maximum simultaneous requests to NSE (default: 25)
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        import nest_asyncio
+        nest_asyncio.apply()
+        return loop.run_until_complete(
+            autils.async_get_multiple_stock_quotes(symbols, series, raw, df, max_concurrent)
+        )
+    else:
+        return asyncio.run(
+            autils.async_get_multiple_stock_quotes(symbols, series, raw, df, max_concurrent)
+        )
 
 
 

@@ -2,7 +2,7 @@
 
 ## **High-Performance, Asynchronous Python Interface for NSEIndia & NiftyIndices Websites.**
 
-[![PyPI Version](https://img.shields.io/pypi/v/nsemine?style=for-the-badge&color=007ACC)](https://pypi.org/project/nsemine/)
+[![PyPI Version](https://img.shields.io/pypi/v/nsemine?style=for-the-badge&color=007ACC&reload=1)](https://pypi.org/project/nsemine/)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
 

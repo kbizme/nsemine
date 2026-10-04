@@ -2,11 +2,68 @@ import pandas as pd
 import traceback
 from nsemine.bin import scraper
 from nsemine import live
-from nsemine.utilities import urls
-from datetime import datetime
+from nsemine.utilities import urls, utils
+from datetime import datetime, date
 
 
 
+
+
+
+def get_option_chain(
+        symbol: str,
+        expiry_date: date,
+        underlying_type: str = "Equity",
+        raw: bool = False,
+    ) -> pd.DataFrame | dict | None:
+    """
+    Fetches option chain data for a given symbol and filters by expiry date.
+
+    Args:
+        symbol (str):  Stock or Index symbol (e.g., 'ADANIENT', 'NIFTY', 'BANKNIFTY')
+        expiry_date (date): Target expiry date object (e.g., date(2026, 10, 27)). If None, automatically defaults to the nearest active expiry.
+        underlying_type (str, optional) : Type of underlying: 'Equity' or 'Indices' (default is 'Equity')
+        raw (bool, optional): If True, returns the complete unparsed raw response dictionary.
+
+    Returns:
+        data (pd.DataFrame | dict | None): Full Available option chain of the given symbol for the given expiry.
+    """
+    try:
+        if not symbol or not isinstance(symbol, str):
+            raise ValueError("symbol must be a valid non-empty string.")
+        
+        clean_symbol = symbol.upper().strip()
+
+        if underlying_type not in ["Equity", "Indices"]:
+            raise ValueError("underlying_type must be a string of either 'Equity' or 'Indices'.")
+
+        if not isinstance(expiry_date, date):
+            raise ValueError("expiry_date must be a valid datetime.date object.")
+
+        formatted_expiry = expiry_date.strftime("%d-%b-%Y")
+        
+        params = {
+            "type": underlying_type,
+            "symbol": clean_symbol,
+            "expiry": formatted_expiry
+        }
+
+        response = scraper.get_request(url=urls.option_chain, params=params)
+        if response is None or response.status_code != 200:
+            return None
+
+        raw_data = response.json()
+        if raw:
+            return raw_data
+
+        return utils.process_option_chain_response(raw_data=raw_data)
+    
+    except Exception as e:
+        print(f'ERROR! - {e}\n')
+        traceback.print_exc()
+        return None
+  
+    
 
 
 def get_oi_spurts(raw: bool = False, sentiment_analysis: bool = True) -> pd.DataFrame | dict | None:
@@ -130,7 +187,10 @@ def get_stock_option_details(symbol: str,
         if only_strikes:
             return strike_prices
         return dict(expiry_dates=expiry_dates, strike_prices=strike_prices)
+    
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
+ 
+ 
  

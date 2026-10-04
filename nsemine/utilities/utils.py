@@ -181,3 +181,73 @@ def process_movers_data(data):
     except:
         return data
     
+
+
+
+def process_option_chain_response(raw_data: dict) -> pd.DataFrame:
+    """
+    Parses and flattens NSE option chain v3 raw response into a proper Pandas DataFrame.
+    """
+    if not raw_data or "records" not in raw_data or "data" not in raw_data["records"]:
+        return pd.DataFrame()
+
+    records_data = raw_data["records"].get("data", [])
+    rows = []
+
+    for item in records_data:
+        strike_price = item.get("strikePrice")
+        expiry_date = item.get("expiryDates")
+
+        ce_data = item.get("CE") or {}
+        pe_data = item.get("PE") or {}
+
+        spot_price = float(
+            ce_data.get("underlyingValue") or pe_data.get("underlyingValue") or 0.0
+        )
+
+        def extract_option_data(opt_dict: dict, prefix: str) -> dict:
+            return {
+                f"{prefix}_oi": int(opt_dict.get("openInterest") or 0),
+                f"{prefix}_oi_change": int(opt_dict.get("changeinOpenInterest") or 0),
+                f"{prefix}_oi_changepct": float(opt_dict.get("pchangeinOpenInterest") or 0.0),
+                f"{prefix}_volume": int(opt_dict.get("totalTradedVolume") or 0),
+                f"{prefix}_iv": float(opt_dict.get("impliedVolatility") or 0.0),
+                f"{prefix}_ltp": float(opt_dict.get("lastPrice") or 0.0),
+                f"{prefix}_change": float(opt_dict.get("change") or 0.0),
+                f"{prefix}_changepct": float(opt_dict.get("pChange") or 0.0),
+                f"{prefix}_top_bid_price": float(opt_dict.get("buyPrice1") or 0.0),
+                f"{prefix}_top_bid_qty": int(opt_dict.get("buyQuantity1") or 0),
+                f"{prefix}_top_ask_price": float(opt_dict.get("sellPrice1") or 0.0),
+                f"{prefix}_top_ask_qty": int(opt_dict.get("sellQuantity1") or 0),
+                f"{prefix}_total_bid_qty": int(opt_dict.get("totalBuyQuantity") or 0),
+                f"{prefix}_total_ask_qty": int(opt_dict.get("totalSellQuantity") or 0),
+                f"{prefix}_symbol": opt_dict.get("identifier"),
+            }
+
+        row = {
+            "expiry_date": expiry_date,
+            "spot_price": spot_price,
+            "strike_price": strike_price,
+        }
+        row.update(extract_option_data(ce_data, "ce"))
+        row.update(extract_option_data(pe_data, "pe"))
+
+        rows.append(row)
+
+    df = pd.DataFrame(rows)
+
+    if df.empty:
+        return df
+
+    int_cols = [
+        col for col in df.columns 
+        if any(keyword in col for keyword in ["_oi", "_volume", "_qty"])
+    ]
+    df[int_cols] = df[int_cols].astype("int64")
+
+    # vectorized rounding of all float columns to 2 decimal places
+    float_cols = df.select_dtypes(include=["float64", "float32"]).columns
+    df[float_cols] = df[float_cols].round(2)
+
+    return df
+

@@ -20,21 +20,21 @@
 
 **🔒 Smart Session Warmup:** Automatic sequential cookie acquisition (`nsit`, `bm_sv`) and lock-guarded session re-priming on token expiration.
 
-**🌐 Comprehensive Data Coverage:** Access a wide range of NSE data, including live quotes, tick-by-tick intraday data, option chain metadata, market depth, advance/decline dynamics, and historical data across Equities and F&O, all within a single unified library.
+**🌐 Comprehensive Data Coverage:** Access a wide range of NSE data, including live quotes, tick-by-tick intraday data, option chains, market depth, advance/decline dynamics, bhavcopy, nse exchange updates (like market status, holidays, catalogs, etc) and historical data across Equities, indices and F&O, all within a single unified library.
 
 **💾 Intelligent Caching:** Minimizes API requests with the intelligent built-in caching mechanism. Reduce your reliance on the NSE API and save you from getting blocked by the NSE Anti-Scraper Bots Protection.. [WIP]
 
-**🔄 Unparalleled Data Flexibility:** &nbsp; `nsemine` empowers you with the complete data manipulation. Choose between the raw, unfiltered API response for maximum customization, OR leverage its efficiently processed data structures for streamlined analysis and immediate insights.
+**🔄 Unparalleled Data Flexibility:**   `nsemine` empowers you with the complete data manipulation. Choose between the raw, unfiltered API response for maximum customization, OR leverage its efficiently processed data structures for streamlined analysis and immediate insights.
 
-**✨ Clean and Intuitive API:**  &nbsp;Designed for simplicity and ease of use, the library provides a clean and intuitive API with proper data types, allowing developers to quickly integrate NSE data into their projects.
+**✨ Clean and Intuitive API:**   Designed for simplicity and ease of use, the library provides a clean and intuitive API with proper data types, allowing developers to quickly integrate NSE data into their projects.
 
-**🚫🪲 Robust Error Handling:**  &nbsp;Built with robust error handling to ensure your applications remain stable and resilient, even in challenging network conditions.
+**🚫🪲 Robust Error Handling:**   Built with robust error handling to ensure your applications remain stable and resilient, even in challenging network conditions.
 
 ---
 
 ## 📦 Installation
 
-Install `nsemine` via PyPI:
+Install `nsemine` via `pip` from PyPI:
 
 ```bash
 pip install nsemine
@@ -52,7 +52,7 @@ pip install "git+https://github.com/kbizme/nsemine.git"
 
 ```python
 from datetime import datetime
-from nsemine import live, historical, nse, fno
+from nsemine import live, historical, nse, fno, archives
 
 # 1. Fetch single stock quote
 quote = live.get_stock_live_quotes(stock_symbol="TCS")
@@ -83,7 +83,8 @@ nsemine/
 ├── 📈 live.py          # Real-time quotes, multi-stock batching, indices, and intraday ticks
 ├── 📜 historical.py    # Historical OHLC charts for equities and indices
 ├── ⚙️ nse.py           # Market status, master lists, gainers/losers, and 52-week data
-└── 🎯 fno.py           # Open Interest spurts, option chain details, and sentiment analytics
+├── 🎯 fno.py           # Open Interest spurts, option chain details, and sentiment analytics
+└── 🗃️ archives.py      # Stock Delivery data, EOD Bhavcopy, FNO Bhavcopy, etc.
 ```
 
 ---
@@ -271,6 +272,10 @@ nifty_hist = historical.get_index_historical_data(
 
 ---
 
+Here is the updated README documentation incorporating `get_option_chain` inside **Module 4: `fno.py**`, followed by the new **Module 5: `archives.py**`, matching the exact structure, styling, and formatting of your existing README.
+
+---
+
 ## Module 4: `fno.py`
 
 #### `get_oi_spurts(raw=False, sentiment_analysis=True)`
@@ -281,12 +286,14 @@ Extracts open interest (OI) spurts merged with live constituent price action to 
 # (Long Buildup, Short Buildup, Short Covering, Long Unwinding)
 oi_df = fno.get_oi_spurts(sentiment_analysis=True)
 ```
+
 * **Parameters:** `raw` *(bool)*, `sentiment_analysis` *(bool)*
 * **Returns:** `pandas.DataFrame | dict | None`
 
 ---
 
 #### `get_stock_option_details(symbol, only_expiry=False, only_strikes=False, raw=False)`
+
 Retrieves active contract expiry dates and available strike price chains for F&O equity underlyings.
 
 ```python
@@ -299,8 +306,60 @@ expiries = fno.get_stock_option_details(symbol="TCS", only_expiry=True)
 # Get strike price grid only
 strikes = fno.get_stock_option_details(symbol="TCS", only_strikes=True)
 ```
+
 * **Parameters:** `symbol` *(str)*, `only_expiry` *(bool)*, `only_strikes` *(bool)*, `raw` *(bool)*
 * **Returns:** `dict | list | None`
+
+---
+
+#### `get_option_chain(symbol, expiry_date, underlying_type="Equity", raw=False)`
+
+Fetches option chain data for a given stock or index symbol and filters by expiry date into a clean, snake_case DataFrame.
+
+```python
+from datetime import date
+
+# Fetch option chain for NIFTY index for a specific expiry
+nifty_chain = fno.get_option_chain(
+    symbol="NIFTY", 
+    expiry_date=date(2026, 10, 27), 
+    underlying_type="Indices"
+)
+
+# Fetch option chain for an equity stock (defaults to nearest active expiry if expiry_date is None)
+adanient_chain = fno.get_option_chain(
+    symbol="TCS", 
+    expiry_date=date(2026, 10, 27), 
+    underlying_type="Equity"
+)
+```
+
+* **Parameters:** `symbol` *(str)*, `expiry_date` *(date)*, `underlying_type` *(str)*, `raw` *(bool)*
+* **Returns:** `pandas.DataFrame | dict | None`
+
+---
+
+## Module 5: `archives.py`
+
+#### `get_daily_bhavcopy_and_deliverables_data(series=None, trade_date=None, raw=False)`
+
+Fetches the daily Capital Market (CM) Bhavcopy data from NSE, including price, volume, VWAP, and delivery statistics, with standardized column formatting and turnover converted to absolute values.
+
+```python
+from datetime import date
+
+# Fetch latest session's full Bhavcopy
+bhavcopy_df = archives.get_daily_bhavcopy_and_deliverables_data()
+
+# Fetch Equity ('EQ') series Bhavcopy for a specific historical date
+eq_bhavcopy = archives.get_daily_bhavcopy_and_deliverables_data(
+    series="EQ", 
+    trade_date=date(2026, 3, 15)
+)
+```
+
+* **Parameters:** `series` *(str, optional)*, `trade_date` *(date, optional)*, `raw` *(bool)*
+* **Returns:** `pandas.DataFrame | None`
 
 ---
 

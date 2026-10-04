@@ -2,15 +2,15 @@ import asyncio
 import pandas as pd
 import time
 from curl_cffi import requests
-from nsemine.bin import scraper
-from nsemine.utilities import urls, utils
+from nsemine.bin import header, scraper
+from nsemine.utilities import utils, urls
 
 
 
 async def _prime_nse_session(session: requests.AsyncSession, profile_idx: int = 0) -> bool:
     """Fetches base cookies from NSE homepage sequentially using document page headers."""
     try:
-        headers = urls.get_nse_headers(profile="page", profile_idx=profile_idx)
+        headers = headers.get_nse_headers(profile="page", profile_idx=profile_idx)
         resp = await scraper.async_get_request(
             url="https://www.nseindia.com", 
             session=session, 
@@ -41,7 +41,7 @@ async def _fetch_single_quote_task(
     quote_referer = f"https://www.nseindia.com/get-quotes/equity?symbol={clean_symbol}"
     
     # use API profile with stock-specific referer
-    headers = urls.get_nse_headers(profile="api", profile_idx=profile_idx, referer=quote_referer)
+    headers = header.get_nse_headers(profile="api", profile_idx=profile_idx, referer=quote_referer)
     
     async with semaphore:
         try:

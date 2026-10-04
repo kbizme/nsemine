@@ -147,7 +147,7 @@ def get_all_indices_live_snapshot(raw: bool = False) -> dict | pd.DataFrame | No
         Use raw=True if you don't want this behavior. 
     """
     try:
-        resp = scraper.get_request(url=urls.al_indices)
+        resp = scraper.get_request(url=urls.all_indices)
         if not resp:
             return None
         

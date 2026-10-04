@@ -32,10 +32,12 @@ al_indices = 'https://www.nseindia.com/api/allIndices'
 nse_equity_quote = 'https://www.nseindia.com/api/NextApi/apiClient/GetQuoteApi?functionName=getSymbolData&marketType=N&series={}&symbol={}'
 ticks_chart = 'https://www.nseindia.com/api/chart-databyindex-dynamic?index={}EQN&type=symbol'
 underlying = 'https://www.nseindia.com/api/underlying-information'
-oi_spurts_underlying = 'https://www.nseindia.com/api/live-analysis-oi-spurts-underlyings'
 
 # DERIVATIVES
 stk_opt_url = 'https://www.nseindia.com/api/option-chain-contract-info?symbol={}'   
+option_chain = "https://www.nseindia.com/api/option-chain-v3"
+oi_spurts_underlying = 'https://www.nseindia.com/api/live-analysis-oi-spurts-underlyings'
+
 
 # SECURITIES ANALYSIS
 new_year_high = 'https://www.nseindia.com/api/live-analysis-data-52weekhighstock'

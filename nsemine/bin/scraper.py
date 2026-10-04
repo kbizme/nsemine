@@ -78,7 +78,7 @@ def get_request(url: str, headers: dict | None = None, params: dict | None = Non
                 )
                 response.raise_for_status()
 
-                # Persist updated telemetry cookies to SQLite
+                # persist updated telemetry cookies to SQLite
                 updated_cookies = SESSION.cookies.get_dict()
                 if updated_cookies:
                     auth.set_session_token(updated_cookies)
@@ -106,7 +106,7 @@ def get_request(url: str, headers: dict | None = None, params: dict | None = Non
         return None
 
     except Exception as e:
-        print(f"CRITICAL FAILURE in get_request: {e}")
+        print(f"CRITICAL FAILURE: {e}")
         return None
 
 
@@ -122,7 +122,7 @@ async def async_get_request(
 
     session_token = auth.get_session_token()
 
-    # Shared or standalone async session handler
+    # shared or standalone async session handler
     close_session = False
     if session is None:
         session = requests.AsyncSession(impersonate="chrome")

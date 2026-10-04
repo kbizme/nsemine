@@ -8,7 +8,6 @@ DB_PATH = Path(__file__).resolve().parent / "nsedb.db"
 
 
 
-
 def get_db_connection():
     try:
         conn = sqlite3.connect(DB_PATH, timeout=10.0)

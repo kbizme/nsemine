@@ -27,11 +27,8 @@ _SESSION_REFRESH_LOCK = threading.Lock()
 _ASYNC_REFRESH_TASKS = {}
 _ASYNC_REFRESH_TASKS_LOCK = threading.Lock()
 
-
 _RETRYABLE_STATUS_CODES = {408, 425, 500, 502, 503, 504}
 _SESSION_REFRESH_STATUS_CODES = {401, 403}
-
-
 
 
 
@@ -90,6 +87,7 @@ def _create_async_session() -> requests.AsyncSession:
     )
 
 
+
 def _refresh_session_token(force: bool = False) -> dict | None:
     """Bootstrap a fresh NSE session and persist its cookies.
 
@@ -127,6 +125,7 @@ def _refresh_session_token(force: bool = False) -> dict | None:
             return None
 
 
+
 async def _async_refresh_session_token(
     async_session: requests.AsyncSession,
     force: bool = False,
@@ -158,7 +157,6 @@ async def _async_refresh_session_token(
             with _ASYNC_REFRESH_TASKS_LOCK:
                 if _ASYNC_REFRESH_TASKS.get(loop) is task:
                     _ASYNC_REFRESH_TASKS.pop(loop, None)
-
 
 
 async def _async_refresh_session_token_impl(
@@ -201,12 +199,7 @@ async def _async_refresh_session_token_impl(
 
 
 def _is_akamai_html_block(response: requests.Response) -> bool:
-    """
-    Detect an HTML edge/block response masquerading as an API success.
-
-    This intentionally classifies the response rather than attempting to bypass or
-    solve the edge challenge. Callers can then stop/rebootstrap in a bounded way.
-    """
+    """Detect an HTML edge/block response masquerading as an API success."""
     content_type = response.headers.get("content-type", "").lower()
     if "text/html" not in content_type:
         return False
@@ -237,7 +230,6 @@ def _classify_response(response: requests.Response) -> str:
     if status_code in _RETRYABLE_STATUS_CODES or status_code >= 500:
         return "transient_http"
     return "http_error"
-
 
 
 def _is_transport_error(exc: Exception) -> bool:
@@ -294,7 +286,6 @@ def _safe_close_response(response: requests.Response | None) -> None:
         LOGGER.debug("Failed to close unsuccessful NSE response", exc_info=True)
 
 
-
 def _persist_session_cookies(session) -> None:
     try:
         updated_cookies = session.cookies.get_dict()
@@ -302,7 +293,6 @@ def _persist_session_cookies(session) -> None:
             auth.set_session_token(updated_cookies)
     except Exception:
         LOGGER.debug("Failed to persist NSE session cookies", exc_info=True)
-
 
 
 def _apply_session_token(session, session_token: dict | None, clear_first: bool = False) -> None:
@@ -313,25 +303,19 @@ def _apply_session_token(session, session_token: dict | None, clear_first: bool 
 
 
 
-
-
 def get_request(
     url: str,
     headers: dict | None = None,
     params: dict | None = None,
 ) -> requests.Response | None:
-    """Perform a resilient synchronous NSE request.
-
-    The function preserves the original public API: callers receive a response on
-    success and ``None`` after bounded recovery attempts on failure.
-    """
+    """Perform a resilient synchronous NSE request."""
     try:
         if headers is None:
             headers = header.get_nse_headers(profile="api", profile_idx=CURRENT_PROFILE_IDX)
 
         session_token = auth.get_session_token(max_age_minutes=SESSION_MAX_AGE_MINUTES)
         if not session_token:
-            session_token = _refresh_session_token()
+            session_token = _refresh_session_token(force=True)
             if not session_token:
                 LOGGER.warning("Failed to establish NSE session.")
                 return None
@@ -357,12 +341,12 @@ def get_request(
                     _persist_session_cookies(session)
                     return response
 
-                if result == "html_block" or result == "session_or_access_block":
+                if result in ("html_block", "session_or_access_block"):
                     if not refreshed_after_block:
                         refreshed_after_block = True
                         session_token = _refresh_session_token(force=True)
                         if session_token:
-                            session = _get_sync_session()
+                            session = _get_sync_session(force_new=True)
                             _apply_session_token(session, session_token, clear_first=True)
                             _SESSION_LOCAL.seeded = True
                             _safe_close_response(response)
@@ -377,7 +361,7 @@ def get_request(
                     )
                     return None
 
-                if result == "rate_limited" or result == "transient_http":
+                if result in ("rate_limited", "transient_http"):
                     delay = _backoff_seconds(retry_index, response)
                     status_code = response.status_code
                     _safe_close_response(response)
@@ -410,16 +394,12 @@ def get_request(
                         e,
                     )
 
-                    is_curl92 = "curl: (92)" in str(e).lower()
+                    # Force-refresh session token on transport errors (curl: 28, 92, etc.)
+                    refreshed_token = _refresh_session_token(force=True)
+                    if refreshed_token:
+                        session_token = refreshed_token
 
-                    if is_curl92:
-                        refreshed_token = _refresh_session_token(force=True)
-                        if refreshed_token:
-                            session_token = refreshed_token
-                        session = _get_sync_session()
-                    else:
-                        session = _get_sync_session(force_new=True)
-
+                    session = _get_sync_session(force_new=True)
                     _apply_session_token(session, session_token, clear_first=True)
                     _SESSION_LOCAL.seeded = True
                     time.sleep(_backoff_seconds(retry_index))
@@ -441,15 +421,13 @@ def get_request(
         return None
 
 
-
-
 async def async_get_request(
     url: str,
     headers: dict | None = None,
     params: dict | None = None,
     session: requests.AsyncSession | None = None,
 ) -> requests.Response | None:
-    """Async counterpart of :func:`get_request` with the same recovery semantics."""
+    """Async counterpart of get_request with transport recovery."""
     if headers is None:
         headers = header.get_nse_headers(profile="api", profile_idx=CURRENT_PROFILE_IDX)
 
@@ -462,7 +440,7 @@ async def async_get_request(
 
     try:
         if not session_token:
-            session_token = await _async_refresh_session_token(session)
+            session_token = await _async_refresh_session_token(session, force=True)
             if not session_token:
                 LOGGER.warning("Failed to establish NSE async session.")
                 return None
@@ -488,7 +466,7 @@ async def async_get_request(
                     _persist_session_cookies(session)
                     return response
 
-                if result == "html_block" or result == "session_or_access_block":
+                if result in ("html_block", "session_or_access_block"):
                     if not refreshed_after_block:
                         refreshed_after_block = True
 
@@ -513,7 +491,7 @@ async def async_get_request(
                     )
                     return None
 
-                if result == "rate_limited" or result == "transient_http":
+                if result in ("rate_limited", "transient_http"):
                     delay = _backoff_seconds(retry_index, response)
                     status_code = response.status_code
                     _safe_close_response(response)
@@ -546,27 +524,15 @@ async def async_get_request(
                         e,
                     )
 
-                    is_curl92 = "curl: (92)" in str(e).lower()
-
-                    if is_curl92:
-                        if close_session:
-                            await session.close()
-                            session = _create_async_session()
-                        else:
-                            session.cookies.clear()
-
-                        refreshed_token = await _async_refresh_session_token(
-                            session,
-                            force=True,
-                        )
-                        if refreshed_token:
-                            session_token = refreshed_token
+                    if close_session:
+                        await session.close()
+                        session = _create_async_session()
                     else:
-                        if close_session:
-                            await session.close()
-                            session = _create_async_session()
-                        else:
-                            session.cookies.clear()
+                        session.cookies.clear()
+
+                    refreshed_token = await _async_refresh_session_token(session, force=True)
+                    if refreshed_token:
+                        session_token = refreshed_token
 
                     _apply_session_token(session, session_token, clear_first=True)
                     await asyncio.sleep(_backoff_seconds(retry_index))
@@ -589,4 +555,4 @@ async def async_get_request(
                 await session.close()
             except Exception:
                 LOGGER.debug("Failed to close owned NSE async session", exc_info=True)
-
+                

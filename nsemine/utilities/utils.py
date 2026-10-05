@@ -1,7 +1,12 @@
 import traceback
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta, time as time_obj
+from datetime import datetime, timedelta
+
+
+
+
+
 
 
 def process_stock_quote_data(quote_data: dict) -> dict:
@@ -248,6 +253,66 @@ def process_option_chain_response(raw_data: dict) -> pd.DataFrame:
     # vectorized rounding of all float columns to 2 decimal places
     float_cols = df.select_dtypes(include=["float64", "float32"]).columns
     df[float_cols] = df[float_cols].round(2)
+
+    return df
+
+
+
+
+def process_index_constituents_data(data: dict, stats: bool = False) -> pd.DataFrame:
+    """
+    Processes NSE index constituents API response dictionary into a cleaned pandas DataFrame.
+    """
+    if not isinstance(data, dict):
+        raise TypeError(f"Expected input type 'dict', got '{type(data).__name__}' instead.")
+
+    payload = data.get('data')
+    if not isinstance(payload, dict):
+        raise ValueError("Invalid payload structure: Root key 'data' is missing or not a dictionary.")
+
+    records = payload.get('data')
+    if not isinstance(records, list) or not records:
+        raise ValueError("No valid constituents list found under 'data.data'.")
+
+    df = pd.DataFrame(records)
+    if 'priority' not in df.columns:
+        raise KeyError("Required filtering column 'priority' is missing from data records.")
+
+    df = df[df['priority'] == 0].copy()
+    if df.empty:
+        raise ValueError("No records remaining after filtering for priority == 0.")
+
+    # column mapping
+    mapping = {
+        'lastUpdateTime': 'datetime', 
+        'symbol': 'symbol', 
+        'companyName': 'name', 
+        'open': 'open', 
+        'dayHigh': 'high', 
+        'dayLow': 'low',
+        'lastPrice': 'close', 
+        'previousClose': 'previous_close', 
+        'change': 'change', 
+        'pChange': 'changepct',
+        'totalTradedVolume': 'volume', 
+        'totalTradedValue': 'turnover', 
+        'yearHigh': 'year_high', 
+        'yearLow': 'year_low', 
+        'perChange365d': 'changepct_year', 
+        'perChange30d': 'changepct_month',
+    }
+
+    missing_cols = [col for col in mapping.keys() if col not in df.columns]
+    if missing_cols:
+        raise KeyError(f"Missing expected columns in API response: {missing_cols}")
+
+    df = df[list(mapping.keys())].rename(columns=mapping)
+
+    df['datetime'] = pd.to_datetime(df['datetime'], errors='coerce')
+    df['name'] = df['name'].astype(str).str.title()
+
+    if stats:
+        return df, payload.get('aduCount', {})
 
     return df
 

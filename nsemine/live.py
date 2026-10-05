@@ -221,50 +221,105 @@ def get_all_securities_live_snapshot(series: str |list = None, raw: bool = False
 
 
 
-def get_index_constituents_live_snapshot(index: str = 'NIFTY 50', raw: bool = False):
+def get_index_constituents_live_snapshot(
+        index: str = "NIFTY 50",
+        raw: bool = False,
+        stats: bool = False,
+        allow_fallback: bool = False,
+    ) -> pd.DataFrame | tuple[pd.DataFrame, dict] | dict | None:
     """
-    Retrieves live snapshot data of constituents for a specified stock market index from the NSE (National Stock Exchange of India).
+    Retrieves live snapshot data of constituents for a specified stock market index from the NSE.
+    
+    This function attempts to fetch real-time data from the primary (v1) endpoint. If the primary
+    endpoint fails or returns empty data, it can optionally fall back to a secondary (v2) endpoint
+    if `allow_fallback=True`.
 
-    This function fetches real-time data for the components of a given index, such as 'NIFTY 50', 'NIFTY BANK', 'NIFTY NEXT 50', etc,. 
-    It may return either the raw JSON response or a processed Pandas DataFrame based on the input parameters.
+    Note on Schema Differences:
+        - Primary Endpoint (v1): Full schema (16 columns including OHLC, 52-week highs/lows, 
+            historical change %s) and supports `stats=True` (advance/decline).
+        - Fallback Endpoint (v2): Reduced schema (8 columns: `symbol`, `ltp`, `previous_close`,
+            `change`, `changepct`, `weightage`, `volume`, `turnover`). It **does not** contain
+            advance/decline stats (`stats` will return an empty dict `{}`).
 
     Args:
-        index (str, optional): The name of the index for which to retrieve constituent data. Defaults to 'NIFTY 50'.
-        raw (bool, optional): If True, returns the raw JSON response from the API. If False, returns a processed Pandas DataFrame. Defaults to False.
+        index (str, optional): The name of the index to retrieve (e.g., 'NIFTY 50', 'NIFTY BANK'). Defaults to 'NIFTY 50'.
+        raw (bool, optional): If True, returns the raw unparsed JSON payload from the API. Defaults to False.
+        stats (bool, optional): If True, returns a tuple where the first element is the DataFrame
+            and the second element is a dictionary containing advance/decline stats. Defaults to False.
+        allow_fallback (bool, optional): If True, attempts to fetch data from the v2 endpoint if
+            v1 fails or returns empty results. Note that v2 provides a reduced schema (8 columns)
+            and does not support index stats. Defaults to False.
 
     Returns:
-        data (pandas.DataFrame or dict or None): Returns the constituents live snapshot fo the given index. 
-                                                Note that the volume is in lakhs and turnover is in crores.
-    
-    Example:
-        To get the processed DataFrame for NIFTY BANK:
-        >>> df = get_index_constituents_live_snapshot(index_name='NIFTY BANK')
+        pd.DataFrame | tuple[pd.DataFrame, dict] | dict | None: 
+            - If `raw=True`: Raw API JSON response dictionary.
+            - If `raw=False` and `stats=False`: Processed constituents DataFrame.
+            - If `raw=False` and `stats=True`: Tuple of (DataFrame, stats_dict).
+            - Returns `None` if requests fail and no valid payload could be retrieved.
 
-        To get the raw JSON response for NIFTY 50:
-        >>> json_data = get_index_constituents_live_snapshot(index_name='NIFTY BANK', raw=True)
+    Example:
+        >>> # Standard strict v1 query (returns full 16-column schema or raises/fails)
+        >>> df = get_index_constituents_live_snapshot(index='NIFTY BANK')
+
+        >>> # Query with fallback enabled (accepts 8-column schema if v1 endpoint fails)
+        >>> df = get_index_constituents_live_snapshot(index='NIFTY BANK', allow_fallback=True)
     """
     try:
-        params = {
-            'index': index,
-        }
-        resp = scraper.get_request(url=urls.nse_equity_index, params=params)
+        try:
+            # Trying Primary Endpoint v1
+            resp = scraper.get_request(url=urls.nse_equity_index_v1, params={"symbol": index})
+            if resp.status_code != 200:
+                raise RuntimeError(f"v1 endpoint HTTP status: {resp.status_code}")
+    
+            data = resp.json()
+            if not data.get("data"):
+                raise ValueError("v1 endpoint returned empty payload or missing 'data' key.")
+    
+            if raw:
+                return data
+            # data = {'data': [{'h': 'a'}]}
+            return utils.process_index_constituents_data(data=data, stats=stats)
+            
+        except Exception as e:
+            if not allow_fallback:
+                traceback.print_exc()
+                return None
+            print(f'ERROR: v1 Endpoint failed with error: {e}. \nTrying v2 endpoint...')
+           
+           
+        # Trying Fqallback Endpoint v2
+        resp = scraper.get_request(url=urls.nse_equity_index_v2, params={"index": index})
+        if resp.status_code != 200:
+            raise RuntimeError(f"v2 endpoint HTTP status: {resp.status_code}")
+
         data = resp.json()
         if raw:
             return data
 
-        # otherwise,
-        data = data['data']
-        df = pd.DataFrame(data)
+        # processing
+        records = data.get("data", [])
+        if not isinstance(records, list) or not records:
+            raise ValueError("v2 endpoint returned empty records list.")
+
+        df = pd.DataFrame(records)
 
         df.columns = ['change', 'cmSymbol', 'lasttradedPrice','pchange', 'totaltradedquantity', 'totaltradedvalue', 'weightage']
         df.columns = ['change', 'symbol', 'ltp', 'changepct', 'volume', 'turnover', 'weightage']
         df['previous_close'] = df['ltp'] - df['change']
-        df =df[['symbol', 'ltp', 'previous_close', 'change', 'changepct', 'weightage', 'volume', 'turnover']]
+        df =df[['symbol', 'ltp', 'previous_close', 'change', 'changepct', 'weightage', 'volume', 'turnover']].copy()
+        df['volume'] = (df['volume'] * 100000).astype('int')
+        df['turnover'] = df['turnover'] * 10000000
+
+        if stats:
+            return df, {}
+
         return df
                     
     except Exception as e:
         print(f'ERROR! - {e}\n')
         traceback.print_exc()
+
+
 
 
 def get_fno_indices_live_snapshot(df: bool = False) -> pd.DataFrame | dict | None:

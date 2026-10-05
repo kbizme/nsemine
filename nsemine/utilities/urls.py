@@ -56,6 +56,6 @@ live_indices = 'https://www.nseindia.com/api/NextApi/apiClient?functionName=getI
 
 
 ######## Index Constituents #######
-nse_equity_index = 'https://www.nseindia.com/api/NextApi/apiClient/indexTrackerApi?functionName=getConstituents&index={}&noofrecords=0'
-
+nse_equity_index_v1 = 'https://www.nseindia.com/api/NextApi/apiClient/marketWatchApi?functionName=getIndicesData&symbol={}'
+nse_equity_index_v2 = 'https://www.nseindia.com/api/NextApi/apiClient/indexTrackerApi?functionName=getConstituents&index={}&noofrecords=0'
 

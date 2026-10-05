@@ -88,7 +88,7 @@ def get_index_live_price(index: str = 'NIFTY 50', raw: bool = False):
     """
     try:
         index = index.upper().strip()
-        resp = scraper.get_request(url=urls.live_index_watch_json)
+        resp = scraper.get_request(url=urls.all_indices, referer=urls.all_indices_ref)
         raw_data = resp.json()
         if raw:
             return raw_data
@@ -147,7 +147,7 @@ def get_all_indices_live_snapshot(raw: bool = False) -> dict | pd.DataFrame | No
         Use raw=True if you don't want this behavior. 
     """
     try:
-        resp = scraper.get_request(url=urls.all_indices)
+        resp = scraper.get_request(url=urls.all_indices, referer=urls.all_indices_ref)
         if not resp:
             return None
         
@@ -337,7 +337,7 @@ def get_fno_indices_live_snapshot(df: bool = False) -> pd.DataFrame | dict | Non
         data (DataFrame | dict | None): Live F&O-index snapshot, or None if the source request fails or no supported indices are available.
     """
     try:
-        resp = scraper.get_request(url=urls.live_index_watch_json)
+        resp = scraper.get_request(url=urls.all_indices, referer=urls.all_indices_ref)
 
         if not resp:
             return None

@@ -88,7 +88,7 @@ def _create_async_session() -> requests.AsyncSession:
 
 
 
-def _refresh_session_token(force: bool = False) -> dict | None:
+def _refresh_session_token(force: bool = False, referer: str | None = None) -> dict | None:
     """Bootstrap a fresh NSE session and persist its cookies.
 
     The refresh lock prevents a burst of concurrent synchronous callers from all
@@ -102,7 +102,7 @@ def _refresh_session_token(force: bool = False) -> dict | None:
 
         session = _get_sync_session(force_new=True)
         session.cookies.clear()
-        page_headers = header.get_nse_headers(profile="page", profile_idx=CURRENT_PROFILE_IDX)
+        page_headers = header.get_nse_headers(profile="page", profile_idx=CURRENT_PROFILE_IDX, referer=referer)
 
         try:
             response = session.get(
@@ -129,6 +129,7 @@ def _refresh_session_token(force: bool = False) -> dict | None:
 async def _async_refresh_session_token(
     async_session: requests.AsyncSession,
     force: bool = False,
+    referer: str | None = None
 ) -> dict | None:
     """
     Bootstrap an NSE session with per-event-loop single-flight refresh.
@@ -146,6 +147,7 @@ async def _async_refresh_session_token(
                 _async_refresh_session_token_impl(
                     async_session=async_session,
                     force=force,
+                    referer=referer
                 )
             )
             _ASYNC_REFRESH_TASKS[loop] = task
@@ -162,6 +164,7 @@ async def _async_refresh_session_token(
 async def _async_refresh_session_token_impl(
     async_session: requests.AsyncSession,
     force: bool = False,
+    referer: str | None = None
 ) -> dict | None:
     """Perform the actual NSE session bootstrap for the single-flight task."""
     if not force:
@@ -174,6 +177,7 @@ async def _async_refresh_session_token_impl(
         page_headers = header.get_nse_headers(
             profile="page",
             profile_idx=CURRENT_PROFILE_IDX,
+            referer=referer
         )
 
         response = await async_session.get(
@@ -307,15 +311,16 @@ def get_request(
     url: str,
     headers: dict | None = None,
     params: dict | None = None,
+    referer: str | None = None
 ) -> requests.Response | None:
     """Perform a resilient synchronous NSE request."""
     try:
         if headers is None:
-            headers = header.get_nse_headers(profile="api", profile_idx=CURRENT_PROFILE_IDX)
+            headers = header.get_nse_headers(profile="api", profile_idx=CURRENT_PROFILE_IDX, referer=referer)
 
         session_token = auth.get_session_token(max_age_minutes=SESSION_MAX_AGE_MINUTES)
         if not session_token:
-            session_token = _refresh_session_token(force=True)
+            session_token = _refresh_session_token(force=True, referer=referer)
             if not session_token:
                 LOGGER.warning("Failed to establish NSE session.")
                 return None
@@ -328,6 +333,7 @@ def get_request(
         for retry_index in range(MAX_RETRIES):
             response = None
             try:
+                print(headers)
                 response = session.get(
                     url=url,
                     headers=headers,
@@ -344,7 +350,7 @@ def get_request(
                 if result in ("html_block", "session_or_access_block"):
                     if not refreshed_after_block:
                         refreshed_after_block = True
-                        session_token = _refresh_session_token(force=True)
+                        session_token = _refresh_session_token(force=True, referer=referer)
                         if session_token:
                             session = _get_sync_session(force_new=True)
                             _apply_session_token(session, session_token, clear_first=True)
@@ -395,7 +401,7 @@ def get_request(
                     )
 
                     # Force-refresh session token on transport errors (curl: 28, 92, etc.)
-                    refreshed_token = _refresh_session_token(force=True)
+                    refreshed_token = _refresh_session_token(force=True, referer=referer)
                     if refreshed_token:
                         session_token = refreshed_token
 
@@ -426,10 +432,11 @@ async def async_get_request(
     headers: dict | None = None,
     params: dict | None = None,
     session: requests.AsyncSession | None = None,
+    referer: str | None = None
 ) -> requests.Response | None:
     """Async counterpart of get_request with transport recovery."""
     if headers is None:
-        headers = header.get_nse_headers(profile="api", profile_idx=CURRENT_PROFILE_IDX)
+        headers = header.get_nse_headers(profile="api", profile_idx=CURRENT_PROFILE_IDX, referer=referer)
 
     session_token = auth.get_session_token(max_age_minutes=SESSION_MAX_AGE_MINUTES)
 
@@ -440,7 +447,7 @@ async def async_get_request(
 
     try:
         if not session_token:
-            session_token = await _async_refresh_session_token(session, force=True)
+            session_token = await _async_refresh_session_token(session, force=True, referer=referer)
             if not session_token:
                 LOGGER.warning("Failed to establish NSE async session.")
                 return None
@@ -476,7 +483,7 @@ async def async_get_request(
                         else:
                             session.cookies.clear()
 
-                        session_token = await _async_refresh_session_token(session, force=True)
+                        session_token = await _async_refresh_session_token(session, force=True, referer=referer)
                         if session_token:
                             _apply_session_token(session, session_token, clear_first=True)
                             _safe_close_response(response)
@@ -530,7 +537,7 @@ async def async_get_request(
                     else:
                         session.cookies.clear()
 
-                    refreshed_token = await _async_refresh_session_token(session, force=True)
+                    refreshed_token = await _async_refresh_session_token(session, force=True, referer=referer)
                     if refreshed_token:
                         session_token = refreshed_token
 

@@ -21,10 +21,12 @@ nse_chart_url = 'https://charting.nseindia.com/v1/charts/symbolHistoricalData'
 search_token_url = 'https://charting.nseindia.com/v1/exchanges/symbolsDynamic'
 
 nse_all_stocks_live = 'https://www.nseindia.com/api/live-analysis-stocksTraded'
-all_indices = 'https://www.nseindia.com/api/allIndices'
 nse_equity_quote = 'https://www.nseindia.com/api/NextApi/apiClient/GetQuoteApi?functionName=getSymbolData&marketType=N&series={}&symbol={}'
 ticks_chart = 'https://www.nseindia.com/api/chart-databyindex-dynamic?index={}EQN&type=symbol'
 underlying = 'https://www.nseindia.com/api/underlying-information'
+
+all_indices = 'https://www.nseindia.com/api/allIndices'
+all_indices_ref = 'https://www.nseindia.com/market-data/live-market-indices'
 
 # DERIVATIVES
 stk_opt_url = 'https://www.nseindia.com/api/option-chain-contract-info?symbol={}'
@@ -48,11 +50,7 @@ full_bhavcopy_cm = 'https://nsearchives.nseindia.com/products/content/sec_bhavda
 historic_bhavcopy_cm = 'https://www.nseindia.com/api/reports?archives=%5B%7B%22name%22%3A%22Full%20Bhavcopy%20and%20Security%20Deliverable%20data%22%2C%22type%22%3A%22daily-reports%22%2C%22category%22%3A%22capital-market%22%2C%22section%22%3A%22equities%22%7D%5D&date={session_date}&type=equities&mode=single'
 
 
-####### NiftyIndices #######
-nifty_index_maping = 'https://iislliveblob.niftyindices.com/assets/json/IndexMapping.json'
-index_watch = 'https://iislliveblob.niftyindices.com/jsonfiles/LiveIndicesWatch.json'
-live_index_watch_json = 'https://www.nseindia.com/api/allIndices'
-live_indices = 'https://www.nseindia.com/api/NextApi/apiClient?functionName=getIndexData&type=All'
+
 
 
 ######## Index Constituents #######

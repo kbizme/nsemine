@@ -33,7 +33,7 @@ def get_nse_headers(profile: str = "api", profile_idx: int = 0, referer: str | N
     ``profile_idx`` remains in the public signature for backwards compatibility,
     but there is intentionally only one canonical Chrome 133 advertised profile.
     """
-    selected = CHROME_PROFILES[0]
+    selected = CHROME_PROFILES[profile_idx]
 
     headers = {
         "User-Agent": selected["ua"],

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nsemine"
-version = "2.0.1"
+version = "2.1.0"
 authors = [
     { name = "kbizme", email = "kbhowmik.eduz@gmail.com" }
 ]
@@ -35,20 +35,9 @@ license = "MIT"
 dependencies = [
     "aiohttp",
     "asyncio",
-    "certifi",
-    "charset-normalizer",
-    "idna",
+    "curl_cffi",
     "numpy",
     "pandas",
-    "python-dateutil",
-    "pytz",
-    "requests",
-    "six",
-    "tzdata",
-    "urllib3",
-    "brotli",
-    "zstandard",
-    "yarl",
 ]
 
 

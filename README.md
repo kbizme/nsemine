@@ -12,7 +12,7 @@
 
 ## 🚀 Key Features
 
-**⚡ Async-Native Engine:** Built on top of `asyncio` and high-speed C-bindings, utilizing (`curl_cffi`) to ensure standard, browser-compliant HTTP header alignment.
+**⚡ Async & Sync Ready:** Built with high-speed C-bindings (`curl_cffi`) and Chrome TLS fingerprint impersonation, providing robust sync utility with seamless async loop compatibility.
 
 **🏎️ Throttled Batch Concurrency:** Fetch hundreds of live stock quotes simultaneously using managed event loops (`nest_asyncio` safe) and token stampede guards.
 

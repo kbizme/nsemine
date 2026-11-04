@@ -316,3 +316,22 @@ def process_index_constituents_data(data: dict, stats: bool = False) -> pd.DataF
 
     return df
 
+
+
+def normalize_financial_df(series: pd.Series) -> pd.Series:
+    """
+    Robustly strips text suffixes and formatting commas from a Series.
+    Splits by whitespace to isolate the first component, clears commas,
+    and returns a clean float Series.
+    """
+    try:
+        if not isinstance(series, pd.Series):
+            raise TypeError("The passed 'series' argument must be of pd.Series type.")
+        s_str = series.astype(str).str.strip()
+        clean_num = s_str.str.split(n=1).str[0].str.replace(",", "", regex=False)
+        return pd.to_numeric(clean_num, errors="coerce")
+    
+    except Exception:
+        print('Normalization failed for the given series.')
+        return series
+

@@ -9,6 +9,8 @@ from nsemine.bin import auth, header
 
 
 
+
+
 LOGGER = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 15
@@ -333,7 +335,6 @@ def get_request(
         for retry_index in range(MAX_RETRIES):
             response = None
             try:
-                print(headers)
                 response = session.get(
                     url=url,
                     headers=headers,

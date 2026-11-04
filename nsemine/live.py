@@ -1,10 +1,10 @@
-from nsemine.bin import autils, scraper
+from nsemine.bin import autils, scraper, header
 from nsemine.utilities import urls, utils
 from datetime import datetime
 import pandas as pd
 import asyncio
 import traceback
-from curl_cffi import requests
+
 
 
 
@@ -205,10 +205,14 @@ def get_all_securities_live_snapshot(series: str |list = None, raw: bool = False
             # processing
             base_df = pd.DataFrame(data['total']['data'])
             df = base_df[['symbol', 'series', 'lastPrice', 'previousClose', 'change', 'pchange', 'totalTradedVolume', 'totalTradedValue', 'totalMarketCap']].copy()
-            df.columns = ['symbol', 'series', 'close', 'previous_close', 'change', 'changepct', 'volume', 'traded_value', 'market_cap']
-            df['volume'] = df['volume'] * 1_00000
+            df.columns = ['symbol', 'series', 'close', 'previous_close', 'change', 'changepct', 'volume', 'traded_value', 'market_cap']            
+            # volume processing
+
+            df['volume'] = utils.normalize_financial_df(df['volume']) * 1_00000
             df['volume'] = df['volume'].astype('int')
-            df[['traded_value', 'market_cap']] = df[['traded_value', 'market_cap']] * 100_00000
+            
+            df['traded_value'] = utils.normalize_financial_df(df['traded_value']) * 100_00000
+            df['market_cap'] = utils.normalize_financial_df(df['market_cap']) * 100_00000
             if not series:
                 return df
             if not isinstance(series, list):
@@ -503,7 +507,7 @@ def get_stock_intraday_tick_by_tick_data(stock_symbol: str, candle_interval: int
         >>> unusual_ohlc_df = get_intraday_tick_by_tick_data('INFY', candle_interval=143)
     """
     try:
-        resp = scraper.get_request(url=urls.ticks_chart.format(stock_symbol.replace('&', '%26')), headers=urls.default_headers)
+        resp = scraper.get_request(url=urls.ticks_chart.format(stock_symbol.replace('&', '%26')), headers=header.default_headers)
         data = resp.json()
         if not candle_interval:
             if raw:

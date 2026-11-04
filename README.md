@@ -6,29 +6,27 @@
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
 
-**A clean, fast, and resilient library designed for algorithmic traders, developers, and quantitative researchers to extract equities, F&O, indices, and market depth without getting blocked or rate-limited.**
+**A clean, fast, and resilient open-source Python library designed for quantitative research, academic analysis, and personal algorithmic exploration across NSE equities, F&O, indices, and market depth.**
 
 ---
 
 ## 🚀 Key Features
 
-**⚡ Async-Native Engine:** Built on top of `asyncio` and high-speed C-bindings (`curl_cffi`) with Chrome TLS fingerprint impersonation to bypass Akamai Web Application Firewalls (WAF).
+**⚡ Async-Native Engine:** Built on top of `asyncio` and high-speed C-bindings, utilizing (`curl_cffi`) to ensure standard, browser-compliant HTTP header alignment.
 
 **🏎️ Throttled Batch Concurrency:** Fetch hundreds of live stock quotes simultaneously using managed event loops (`nest_asyncio` safe) and token stampede guards.
 
 **📊 Vectorized Pre-processing:** Leverages `pandas` and `numpy` vectorized transformations to parse incoming payloads into clean, typed DataFrames (`Int64` volume casting, float conversions).
 
-**🔒 Smart Session Warmup:** Automatic sequential cookie acquisition (`nsit`, `bm_sv`) and lock-guarded session re-priming on token expiration.
+**🌐 Comprehensive Data Coverage:** Access a wide range of market data, including live quotes, tick-by-tick intraday data, option chains, market depth, advance/decline dynamics, bhavcopy, exchange status updates, and historical data across Equities, indices, and F&O.
 
-**🌐 Comprehensive Data Coverage:** Access a wide range of NSE data, including live quotes, tick-by-tick intraday data, option chains, market depth, advance/decline dynamics, bhavcopy, nse exchange updates (like market status, holidays, catalogs, etc) and historical data across Equities, indices and F&O, all within a single unified library.
+**💾 Intelligent Caching [WIP]:** Minimizes network requests with an internal caching mechanism to optimize local bandwidth and request frequency.
 
-**💾 Intelligent Caching:** Minimizes API requests with the intelligent built-in caching mechanism. Reduce your reliance on the NSE API and save you from getting blocked by the NSE Anti-Scraper Bots Protection.. [WIP]
+**🔄 Data Flexibility:** Choose between raw, unfiltered API responses for maximum customization or structured DataFrames for immediate analysis.
 
-**🔄 Unparalleled Data Flexibility:**   `nsemine` empowers you with the complete data manipulation. Choose between the raw, unfiltered API response for maximum customization, OR leverage its efficiently processed data structures for streamlined analysis and immediate insights.
+**✨ Clean and Intuitive API:** Designed for simplicity and ease of use, providing intuitive functions with explicit data typing for seamless integration.
 
-**✨ Clean and Intuitive API:**   Designed for simplicity and ease of use, the library provides a clean and intuitive API with proper data types, allowing developers to quickly integrate NSE data into their projects.
-
-**🚫🪲 Robust Error Handling:**   Built with robust error handling to ensure your applications remain stable and resilient, even in challenging network conditions.
+**🚫 Robust Error Handling:** Built-in safeguards ensure application stability and resilience under varying network conditions.
 
 ---
 
@@ -107,7 +105,7 @@ raw_quote = live.get_stock_live_quotes(stock_symbol="INFY", raw=True)
 ---
 
 #### `get_multiple_stock_live_quotes(symbols, series='EQ', raw=False, df=True, max_concurrent=25)`
-**[NEW]** Concurrent batch fetch engine with token-stampede guards and automatic event loop adaptation.
+Concurrent batch fetch engine with token-stampede guards and automatic event loop adaptation.
 
 ```python
 # High-speed batch retrieval into a Pandas DataFrame
@@ -272,10 +270,6 @@ nifty_hist = historical.get_index_historical_data(
 
 ---
 
-Here is the updated README documentation incorporating `get_option_chain` inside **Module 4: `fno.py**`, followed by the new **Module 5: `archives.py**`, matching the exact structure, styling, and formatting of your existing README.
-
----
-
 ## Module 4: `fno.py`
 
 #### `get_oi_spurts(raw=False, sentiment_analysis=True)`
@@ -314,7 +308,7 @@ strikes = fno.get_stock_option_details(symbol="TCS", only_strikes=True)
 
 #### `get_option_chain(symbol, expiry_date, underlying_type="Equity", raw=False)`
 
-Fetches option chain data for a given stock or index symbol and filters by expiry date into a clean, snake_case DataFrame.
+Fetches option chain data for a given stock or index symbol and filters by expiry date into a clean DataFrame.
 
 ```python
 from datetime import date
@@ -343,7 +337,7 @@ adanient_chain = fno.get_option_chain(
 
 #### `get_daily_bhavcopy_and_deliverables_data(series=None, trade_date=None, raw=False)`
 
-Fetches the daily Capital Market (CM) Bhavcopy data from NSE, including price, volume, VWAP, and delivery statistics, with standardized column formatting and turnover converted to absolute values.
+Fetches daily Capital Market (CM) Bhavcopy data from NSE, including price, volume, VWAP, and delivery statistics.
 
 ```python
 from datetime import date
@@ -363,10 +357,23 @@ eq_bhavcopy = archives.get_daily_bhavcopy_and_deliverables_data(
 
 ---
 
-## ⚠️ Disclaimer & Anti-Scraping Guidelines
+## ⚠️ Disclaimer & Terms of Use
 
-* **Educational Use Only:** `nsemine` is intended for financial research, educational purposes, and personal trading algorithms. Use at your discretion and accountability.
-* **Rate Limits:** Keep `max_concurrent` between `10` and `20` during live market hours to avoid Akamai rate-limiting policies. Avoid infinite tight polling loops without sleeping intervals.
+### 1. Educational & Personal Research Purposes Only
+`nsemine` is an independent open-source library created strictly for educational, academic, and personal research purposes. It is not affiliated with, endorsed by, sponsored by, or associated with the National Stock Exchange of India (NSE) or any of its subsidiaries.
+
+### 2. No Investment or Financial Advice
+Nothing contained in this library or its outputs constitutes financial, legal, or investment advice. Users are solely responsible for verifying data accuracy and for any trading, financial, or investment decisions made using this tool.
+
+### 3. User Accountability & Compliance
+By utilizing this library, you acknowledge and agree that:
+* You assume full legal responsibility and accountability for your automated access, queries, and data usage.
+* You are responsible for reviewing and complying with the Terms of Use, policies, and rate constraints of any third-party infrastructure or data sources accessed.
+* You must implement responsible rate limiting (`max_concurrent` under 5–10) and refrain from executing excessive requests that could strain remote systems.
+* This tool must not be used for commercial data redistribution, resale, or scraping activities that violate applicable service agreements.
+
+### 4. Limitation of Liability
+The authors, maintainers, and contributors of `nsemine` assume **no responsibility or liability** for any errors, omissions, server access blocks, data inaccuracies, financial losses, or legal consequences resulting from the use or misuse of this software. This software is provided **"AS IS"**, without warranty of any kind, express or implied.
 
 ---
 
@@ -374,4 +381,4 @@ eq_bhavcopy = archives.get_daily_bhavcopy_and_deliverables_data(
 
 Contributions, bug reports, and feature requests are welcome! Feel free to check the [issues page](https://github.com/kbizme/nsemine/issues) or submit a pull request.
 
-Made with ❤️ for the Indian Algorithmic Trading & Investing Community.
+Made with ❤️ for the Open-Source Financial Research Community.
